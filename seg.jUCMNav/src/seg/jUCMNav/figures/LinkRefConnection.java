@@ -104,7 +104,7 @@ public class LinkRefConnection extends PolylineConnection {
         line = new PolylineDecoration();
         line.setTemplate(LINE);
         line.setLineWidth(3);
-        line.setScale(10, 10);
+        line.setScale(13, 8);
         line.setAntialias(GeneralPreferencePage.getAntialiasingPref());
 
         depend = new PolygonDecoration();
@@ -158,9 +158,9 @@ public class LinkRefConnection extends PolylineConnection {
             setSourceDecoration(null);
         } else if (type == TYPE_DECOMPOSITION_AND || type == TYPE_DECOMPOSITION_OR) {
             setLineStyle(SWT.LINE_SOLID);
-            setTargetDecoration(null);
+            setTargetDecoration(line);
             setMiddleDecoration(null);
-            setSourceDecoration(line);
+            setSourceDecoration(null);
         } else if (type == TYPE_OPTIONAL) {
             setLineStyle(SWT.LINE_SOLID);
             setTargetDecoration(null);

@@ -13,6 +13,7 @@ import org.eclipse.draw2d.IFigure;
 import org.eclipse.draw2d.Label;
 import org.eclipse.draw2d.PositionConstants;
 import org.eclipse.draw2d.ScalableFigure;
+import org.eclipse.draw2d.geometry.Dimension;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.emf.common.notify.Notification;
@@ -74,24 +75,26 @@ import urncore.IURNNode;
 
 /**
  * EditPart for all IntentialElementRef. It listen for changes in the references and the definitions
- * 
+ *
  * @author Jean-Francois Roy, sghanava, jkealey, gunterm
- * 
+ *
  */
 public class IntentionalElementEditPart extends GrlNodeEditPart implements NodeEditPart {
 
     private Label evaluationLabel;
 
     private Label kpiEvaluationValueLabel;
-    
+
     private Label changeLabel;
 
-    private Image evaluationImg;
-    
+    private Label decompositionLabel;
 
-  
+    private Image evaluationImg;
+
+
+
     /**
-     * 
+     *
      * @param model
      *            the intentional element ref to draw
      */
@@ -102,7 +105,7 @@ public class IntentionalElementEditPart extends GrlNodeEditPart implements NodeE
 
     /**
      * We need to listen for the reference and the definition for intentionalElement
-     * 
+     *
      * @see org.eclipse.gef.EditPart#activate()
      */
     public void activate() {
@@ -116,7 +119,7 @@ public class IntentionalElementEditPart extends GrlNodeEditPart implements NodeE
 
     /**
      * Create the edit policies.
-     * 
+     *
      * @see seg.jUCMNav.editparts.ModelElementEditPart#createEditPolicies()
      */
     protected void createEditPolicies() {
@@ -128,7 +131,7 @@ public class IntentionalElementEditPart extends GrlNodeEditPart implements NodeE
 
     /**
      * Create the GrlNode figure and associated evaluation labels.
-     * 
+     *
      * @see seg.jUCMNav.editparts.ModelElementEditPart#createFigure()
      */
     protected IFigure createFigure() {
@@ -144,11 +147,20 @@ public class IntentionalElementEditPart extends GrlNodeEditPart implements NodeE
         kpiEvaluationValueLabel.setForegroundColor(ColorManager.BLUE);
         kpiEvaluationValueLabel.setVisible(false);
         kpiEvaluationValueLabel.setSize(70, 16);
-        
+
         changeLabel = new Label();
         changeLabel.setForegroundColor(ColorManager.LINKREFLABEL);
         changeLabel.setVisible(false);
         changeLabel.setSize(50, 16);
+
+        // The decomposition-type label (AND/OR/XOR) hangs centered directly under a
+        // decomposition parent's goal, touching its bottom border. It lives on the primary
+        // layer (like the evaluation/change labels) because a node figure can only paint
+        // children clipped to its own bounds -- a child below its bottom edge would be cut off.
+        decompositionLabel = new Label();
+        decompositionLabel.setForegroundColor(ColorManager.LINKREFLABEL);
+        decompositionLabel.setOpaque(true);
+        decompositionLabel.setVisible(false);
 
         // The evaluation/KPI/change labels need to live on a layer that scales with the zoom
         // factor, otherwise their position is computed in model coordinates but rendered against
@@ -167,18 +179,20 @@ public class IntentionalElementEditPart extends GrlNodeEditPart implements NodeE
             scaledPrimary.add(evaluationLabel);
             scaledPrimary.add(kpiEvaluationValueLabel);
             scaledPrimary.add(changeLabel);
+            scaledPrimary.add(decompositionLabel);
         } catch (Exception ex) {
             System.out.println("problem attaching grl evaluation label to scaled layer"); //$NON-NLS-1$
             ((GrlConnectionOnBottomRootEditPart) getRoot()).getFigure().add(evaluationLabel);
             ((GrlConnectionOnBottomRootEditPart) getRoot()).getFigure().add(kpiEvaluationValueLabel);
             ((GrlConnectionOnBottomRootEditPart) getRoot()).getFigure().add(changeLabel);
+            ((GrlConnectionOnBottomRootEditPart) getRoot()).getFigure().add(decompositionLabel);
         }
         return fig;
     }
 
     /**
      * Overriding because we also have to listen to the Component definition
-     * 
+     *
      * @see org.eclipse.gef.EditPart#deactivate()
      */
     public void deactivate() {
@@ -191,6 +205,7 @@ public class IntentionalElementEditPart extends GrlNodeEditPart implements NodeE
             removeFromParent(evaluationLabel);
             removeFromParent(kpiEvaluationValueLabel);
             removeFromParent(changeLabel);
+            removeFromParent(decompositionLabel);
             if (getNode() instanceof IntentionalElementRef && (getNode()).getDef() != null)
                 (getNode()).getDef().eAdapters().remove(this);
         }
@@ -206,7 +221,7 @@ public class IntentionalElementEditPart extends GrlNodeEditPart implements NodeE
     /**
      * When nodes are dragged in GEF, they explicitly remove connections from being possible drop targets. By overriding DragEditPartsTracker, we allow this
      * behaviour.
-     * 
+     *
      * @see org.eclipse.gef.EditPart#getDragTracker(org.eclipse.gef.Request)
      */
     public DragTracker getDragTracker(Request request) {
@@ -214,7 +229,7 @@ public class IntentionalElementEditPart extends GrlNodeEditPart implements NodeE
     }
 
     /**
-     * 
+     *
      * @return the intentional element.
      */
     private IntentionalElementRef getNode() {
@@ -237,27 +252,27 @@ public class IntentionalElementEditPart extends GrlNodeEditPart implements NodeE
         }
         return propertySource;
     }
-    
 
-    
+
+
     /**
      *@ overwrite the method of  performRequest in GrlNodeEditPart
      * Show direct edit on element(if not root feature)on double click, f2 or delay.
      */
     public void performRequest(Request request) {
-    	
+
     	// if the definition of the IntentionalElementRef has the metadata "CoURN", the direct edit is not allowed
         String value= MetadataHelper.getMetaData( ((IntentionalElementRef)getModel()).getDef(), "CoURN");
         if( (value!= null && value.equalsIgnoreCase("root feature"))){
-        	return;	
+        	return;
         }
         super.performRequest(request);
     }
-    
- 
-    
+
+
+
     /**
-     * 
+     *
      * @see org.eclipse.gef.editparts.AbstractGraphicalEditPart#getModelSourceConnections()
      */
     protected List getModelSourceConnections() {
@@ -265,7 +280,7 @@ public class IntentionalElementEditPart extends GrlNodeEditPart implements NodeE
     }
 
     /**
-     * 
+     *
      * @see org.eclipse.gef.editparts.AbstractGraphicalEditPart#getModelTargetConnections()
      */
     protected List getModelTargetConnections() {
@@ -273,7 +288,7 @@ public class IntentionalElementEditPart extends GrlNodeEditPart implements NodeE
     }
 
     /**
-     * 
+     *
      * @see org.eclipse.gef.NodeEditPart#getSourceConnectionAnchor(org.eclipse.gef.ConnectionEditPart)
      */
     public ConnectionAnchor getSourceConnectionAnchor(ConnectionEditPart connection) {
@@ -281,7 +296,7 @@ public class IntentionalElementEditPart extends GrlNodeEditPart implements NodeE
     }
 
     /**
-     * 
+     *
      * @see org.eclipse.gef.NodeEditPart#getSourceConnectionAnchor(org.eclipse.gef.Request)
      */
     public ConnectionAnchor getSourceConnectionAnchor(Request request) {
@@ -290,7 +305,7 @@ public class IntentionalElementEditPart extends GrlNodeEditPart implements NodeE
     }
 
     /**
-     * 
+     *
      * @see org.eclipse.gef.NodeEditPart#getTargetConnectionAnchor(org.eclipse.gef.ConnectionEditPart)
      */
     public ConnectionAnchor getTargetConnectionAnchor(ConnectionEditPart connection) {
@@ -303,7 +318,7 @@ public class IntentionalElementEditPart extends GrlNodeEditPart implements NodeE
     }
 
     /**
-     * 
+     *
      * @see org.eclipse.gef.NodeEditPart#getTargetConnectionAnchor(org.eclipse.gef.Request)
      */
     public ConnectionAnchor getTargetConnectionAnchor(Request request) {
@@ -361,7 +376,7 @@ public class IntentionalElementEditPart extends GrlNodeEditPart implements NodeE
 
     /**
      * Refresh the figure and its associated labels.
-     * 
+     *
      * @see seg.jUCMNav.editparts.ModelElementEditPart#refreshVisuals()
      */
     protected void refreshVisuals() {
@@ -371,7 +386,7 @@ public class IntentionalElementEditPart extends GrlNodeEditPart implements NodeE
         	Vector warningList = FeatureModelStrategyAlgorithm.getWarnings();
         	StrategyEvaluationWarning[] temp = FeatureModelStrategyAlgorithm.getWarnings()
         			.toArray(new StrategyEvaluationWarning[FeatureModelStrategyAlgorithm.getWarnings().size()]);
-        	
+
         	for(int i= 0; i< temp.length ; i++){
         			StrategyEvaluationWarning currWarning = temp[i];
         			System.out.println("The location of the current warning is "+((IntentionalElementRef)currWarning.getLocation()).getName());
@@ -380,12 +395,12 @@ public class IntentionalElementEditPart extends GrlNodeEditPart implements NodeE
           		    if (((IntentionalElementRef)currWarning.getLocation()).getDef().equals(getNode().getDef())){
           		    	warningList.remove(currWarning);
           		    	FeatureModelStrategyAlgorithm.getWarnings().remove(currWarning);
-          		    	
+
           		    }
         		}
         	System.out.println("The number of warning in the Warninglist of FeatureModelElementStrategy "+FeatureModelStrategyAlgorithm.getWarnings().size());
          }
-        	
+
         evaluationLabel.setForegroundColor(ColorManager.LINE);
 
         int width = MetadataHelper.getIntMetaData(getNode(), MetadataHelper.WIDTH, 0); //$NON-NLS-1$
@@ -400,6 +415,7 @@ public class IntentionalElementEditPart extends GrlNodeEditPart implements NodeE
         if ((getNode()).getDef() != null && ((getNode()).getDef() instanceof IntentionalElement)) {
             IntentionalElement elem = (getNode()).getDef();
             ((IntentionalElementFigure) figure).setType(elem.getType().getValue());
+            refreshDecompositionLabel(getDecompositionTypeName(elem));
 
             // Set the tool tip
             UrnMetadata.setToolTip(elem, getNodeFigure());
@@ -413,7 +429,7 @@ public class IntentionalElementEditPart extends GrlNodeEditPart implements NodeE
                     figure.setForegroundColor(ColorManager.AQUA);
                 }
                 ((IntentionalElementPropertySource) getPropertySource()).setEvaluationStrategyView(false);
-                
+
                 if (getNode().getFromLinks().size() + getNode().getToLinks().size() + elem.getFromLinks().size() + elem.getToLinks().size() > 0) {
                     evaluationLabel.setText(""); //$NON-NLS-1$
                     setUrnLinkIcon(getNode(), elem);
@@ -434,12 +450,12 @@ public class IntentionalElementEditPart extends GrlNodeEditPart implements NodeE
                     evaluationLabel.setVisible(false);
                     kpiEvaluationValueLabel.setVisible(false);
                 }
-                
+
                 //If TimedGRL algorithm selected and design view is active, then add change label if required
                 if (StrategyEvaluationPreferences.getAlgorithm().equals(StrategyEvaluationPreferences.TIMED_GRL_ALGORITHM + "")) {
-                	
+
                 	//Add change label if at least one change exists for the element
-                	if (getNode().getDef() instanceof IntentionalElement && 
+                	if (getNode().getDef() instanceof IntentionalElement &&
                 			DynamicContextsUtils.changeExistsFor(getNode().getDef(), getNode().getDef().getGrlspec().getUrnspec())) {
                 		changeLabel.setForegroundColor(ColorManager.LINE);
                     	changeLabel.setText("");//$NON-NLS-1$
@@ -456,7 +472,7 @@ public class IntentionalElementEditPart extends GrlNodeEditPart implements NodeE
 
             } else {
             	changeLabel.setVisible(false);
-            	
+
                 // Set strategy view to true
                 ((IntentionalElementPropertySource) getPropertySource()).setEvaluationStrategyView(true);
                 // Get the evaluation value
@@ -464,7 +480,7 @@ public class IntentionalElementEditPart extends GrlNodeEditPart implements NodeE
                 boolean ignored = EvaluationStrategyManager.getInstance().isIgnored(getNode().getDef());
                 IGRLStrategyAlgorithm algo = EvaluationStrategyManager.getInstance().getEvaluationAlgorithm();
                 int evalType = algo.getEvaluationType();
-                
+
                 if (evaluation != null) {
                     if (StrategyEvaluationPreferences.getFillElements()) {
                         String color, lineColor;
@@ -483,7 +499,7 @@ public class IntentionalElementEditPart extends GrlNodeEditPart implements NodeE
 
                         if (evaluation.getStrategies() != null || MetadataHelper.getMetaDataObj(elem, FeatureModelStrategyAlgorithm.METADATA_AUTO_SELECTED) != null) {
                             if (determineOverriddenWarning(elem, evalType)){
-                            	lineColor = "160,0,0"; //$NON-NLS-1$ 
+                            	lineColor = "160,0,0"; //$NON-NLS-1$
                                 if (elem.getDecompositionType() == DecompositionType.XOR_LITERAL && getNode().getDiagram() instanceof FeatureDiagram){
                                 	FeatureModelStrategyAlgorithm.getWarnings().add(new StrategyEvaluationWarning(Messages.getString("FeatureModelStrategyAlgorithm.XORErrorNoneSelected"),
                                 			getNode(),IMarker.SEVERITY_ERROR));
@@ -492,11 +508,11 @@ public class IntentionalElementEditPart extends GrlNodeEditPart implements NodeE
                                 	FeatureModelStrategyAlgorithm.getWarnings().add(new StrategyEvaluationWarning(Messages.getString("FeatureModelStrategyAlgorithm.ORErrorNoneSelected"),
                                 			getNode(),IMarker.SEVERITY_ERROR));
                                 }
-                                
+
                            }
-                            
-                            
-                            
+
+
+
                             ((IntentionalElementFigure) figure).setLineStyle(SWT.LINE_DASH);
                             if (elem.getType() == IntentionalElementType.INDICATOR_LITERAL) {
                                 // Special case for indicators... no dashed lines as they are always initialized.
@@ -517,7 +533,7 @@ public class IntentionalElementEditPart extends GrlNodeEditPart implements NodeE
                         	     FeatureModelStrategyAlgorithm.getWarnings().add(new StrategyEvaluationWarning(Messages.getString("FeatureModelStrategyAlgorithm.XORErrorBothSelected")
                         			 ,getNode(),IMarker.SEVERITY_ERROR));
                         	}
-                        	
+
                         }
                         String value = MetadataHelper.getMetaData(getNode().getDef(), "CoURN");
                         if (value!=null && value.equalsIgnoreCase("root feature") && evaluation.getEvaluation()!=100){
@@ -526,9 +542,9 @@ public class IntentionalElementEditPart extends GrlNodeEditPart implements NodeE
                         	FeatureModelStrategyAlgorithm.getWarnings().add(new StrategyEvaluationWarning(Messages.getString("FeatureModelStrategyAlgorithm.RootFeatureEvaluation")
                         			 ,getNode(),IMarker.SEVERITY_ERROR));
                         }
-                        
+
                         ((IntentionalElementFigure) figure).setColors(lineColor, color, true);
-                        
+
                     }
 
                     String text = (evaluation.getStrategies() != null ? "(*)" : ""); //$NON-NLS-1$ //$NON-NLS-2$
@@ -570,7 +586,7 @@ public class IntentionalElementEditPart extends GrlNodeEditPart implements NodeE
                     evaluationLabel.setVisible(true);
 
                     if (evalType == IGRLStrategyAlgorithm.EVAL_FORMULA) {
-                        String kpiText = "";//$NON-NLS-1$                       
+                        String kpiText = "";//$NON-NLS-1$
                         if ((getNode()).getDef() != null && ((getNode()).getDef() instanceof Indicator)) {
                             EvaluationStrategyManager sm = EvaluationStrategyManager.getInstance();
                             Indicator indicator = (Indicator) getNode().getDef();
@@ -579,7 +595,7 @@ public class IntentionalElementEditPart extends GrlNodeEditPart implements NodeE
                                 // double kpiValue = set.getEvaluationValue();
 
                                 if (set.getQualitativeEvaluationValue() != null && set.getQualitativeEvaluationValue().length() > 0) {
-                                    kpiEvaluationValueLabel.setText(set.getQualitativeEvaluationValue()); 
+                                    kpiEvaluationValueLabel.setText(set.getQualitativeEvaluationValue());
                                 }
                                 else {
                                     double kpiValue = sm.getActiveKPIValue(indicator);
@@ -655,7 +671,7 @@ public class IntentionalElementEditPart extends GrlNodeEditPart implements NodeE
                 refreshConnections();
             }
         }
-        
+
         setTrendIcons();
 
         // Make the label recenter itself.
@@ -689,14 +705,69 @@ public class IntentionalElementEditPart extends GrlNodeEditPart implements NodeE
 				// elements with only optional links are allowed to be selected even if their children are not
 				isException = FeatureUtil.containsOnlyOptionalDestLink((Feature) elem) && FeatureUtil.checkSelectionStatus((Feature) elem, true);
 				// the initial evaluation is the same as the computed one (i.e., e.g., user defined value is the same as the contributions of all child links)
-		    	isException = isException || (MetadataHelper.getMetaDataObj(elem, FeatureModelStrategyAlgorithm.METADATA_WARNING) == null);  
+		    	isException = isException || (MetadataHelper.getMetaDataObj(elem, FeatureModelStrategyAlgorithm.METADATA_WARNING) == null);
 			}
 			return !isException;
 		}
 		return false;
 	}
-	
-	
+
+	/**
+	 * Returns the decomposition-type name (AND/OR/XOR) for the given element if it is a
+	 * decomposition parent (i.e. it is the destination of at least one Decomposition link), or
+	 * <code>null</code> otherwise.
+	 *
+	 * @param elem
+	 *            the intentional element
+	 * @return the decomposition type name, or <code>null</code> if <code>elem</code> is not a
+	 *         decomposition parent
+	 */
+	private String getDecompositionTypeName(IntentionalElement elem) {
+		if (elem == null || elem.getDecompositionType() == null)
+			return null;
+		for (Iterator it = elem.getLinksDest().iterator(); it.hasNext();) {
+			if (it.next() instanceof Decomposition) {
+				return elem.getDecompositionType().getName().toUpperCase();
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Shows, hides and re-anchors the decomposition-type label (AND/OR/XOR) for this element.
+	 *
+	 * When the element is a decomposition parent, the label is shown centered directly
+	 * underneath the node, its top touching the node's bottom border (no overlap). The label's
+	 * bottom-center -- the target of the incoming decomposition connections -- is therefore
+	 * (node center x, node bottom + label height), which is the same point DecompositionAnchor
+	 * computes from the node bounds and the label's preferred size.
+	 *
+	 * @param typeName
+	 *            the decomposition type name, or <code>null</code> if this element is not a
+	 *            decomposition parent
+	 */
+	private void refreshDecompositionLabel(String typeName) {
+		if (decompositionLabel == null || getNodeFigure() == null)
+			return;
+		if (typeName == null) {
+			decompositionLabel.setVisible(false);
+			((IntentionalElementFigure) figure).setDecompositionLabel(null);
+			return;
+		}
+		decompositionLabel.setText(typeName);
+		decompositionLabel.setVisible(true);
+		((IntentionalElementFigure) figure).setDecompositionLabel(decompositionLabel);
+		// The layer does not layout its children, so the label must size itself: only
+		// setLocation()'d bound changes leave the size at its default, which clips the
+		// label to a zero-size region on the paint path.
+		Dimension size = decompositionLabel.getPreferredSize();
+		decompositionLabel.setSize(size);
+		Rectangle nodeBounds = getNodeFigure().getBounds();
+		decompositionLabel.setLocation(new Point(nodeBounds.x + nodeBounds.width / 2 - size.width / 2,
+				nodeBounds.y + nodeBounds.height));
+	}
+
+
 
 	public static String determineColor(URNspec urn, IntentionalElement elem, Evaluation evaluation, boolean ignored, int evalType) {
 		String color;
@@ -706,10 +777,10 @@ public class IntentionalElementEditPart extends GrlNodeEditPart implements NodeE
 		    color = "0,255,255"; //$NON-NLS-1$
 		} else if (evaluation.getEvaluation() == IGRLStrategyAlgorithm.UNDECIDED) {
 		    color = "192,192,192"; //$NON-NLS-1$
-		} else if (evalType == IGRLStrategyAlgorithm.EVAL_FEATURE_MODEL && elem instanceof Feature && 
-				FeatureUtil.checkSelectionStatus((Feature) elem, false) && 
-				(FeatureUtil.containsOnlySrcLinkToNotSelectedFeature((Feature) elem, urn.getGrlspec()) || 
-						FeatureUtil.containsOnlyOptionalSrcLinkToFeature((Feature) elem, urn.getGrlspec()) 
+		} else if (evalType == IGRLStrategyAlgorithm.EVAL_FEATURE_MODEL && elem instanceof Feature &&
+				FeatureUtil.checkSelectionStatus((Feature) elem, false) &&
+				(FeatureUtil.containsOnlySrcLinkToNotSelectedFeature((Feature) elem, urn.getGrlspec()) ||
+						FeatureUtil.containsOnlyOptionalSrcLinkToFeature((Feature) elem, urn.getGrlspec())
 						|| FeatureUtil.containsOnlyMandatorySrcLinkToFeature((Feature)elem, urn.getGrlspec())
 						|| FeatureUtil.hasOrXorBrother((Feature)elem)) && !FeatureUtil.isReexposed(elem)){
 					//	|| FeatureUtil.hasSelectedOrXorBrother((Feature) elem, true, true)) ) {
@@ -723,7 +794,7 @@ public class IntentionalElementEditPart extends GrlNodeEditPart implements NodeE
 
 		    // if 0,100, convert back to -100,100 to have the right color.
 		    evalValue = StrategyEvaluationPreferences.getEquivalentValueInFullRangeIfApplicable(urn, evalValue);
-		    
+
 		    if (EvaluationStrategyManager.getInstance().displayDifferenceMode()
 		            && !StrategyEvaluationPreferences.getVisualizeAsPositiveRange(urn)) {
 		        evalValue /= 2;
@@ -750,7 +821,7 @@ public class IntentionalElementEditPart extends GrlNodeEditPart implements NodeE
             if(icon != null)
                 evaluationLabel.setIcon(icon);
         }
-   
+
     }
 
     private static int limit(int value) {
@@ -764,7 +835,7 @@ public class IntentionalElementEditPart extends GrlNodeEditPart implements NodeE
 
     /**
      * Set the icon of the intentional element's label in case in has URN links.
-     * 
+     *
      * @see seg.jUCMNav.editparts.ModelElementEditPart#refreshVisuals()
      */
     private void setUrnLinkIcon(IntentionalElementRef ref, IntentionalElement elem) {
@@ -800,7 +871,7 @@ public class IntentionalElementEditPart extends GrlNodeEditPart implements NodeE
     private void setText() {
        if (getNode().getDef() != null) {
             String stereotypes = UrnMetadata.getAllStereotypes(getNode(), getNode().getDef());
-            String name = getNode().getDef().getName();            
+            String name = getNode().getDef().getName();
             String importance = getImportanceSuffix(getNode().getDef().getImportanceQuantitative(), getNode().getDef().getImportance());
             getNodeFigure().setEditableText(name + importance + stereotypes);
         }

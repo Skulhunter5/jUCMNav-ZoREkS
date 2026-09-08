@@ -61,7 +61,11 @@ public class LinkRefEditPart extends AbstractConnectionEditPart {
     protected IPropertySource propertySource = null;
 
     //private Image img;
-    private Label decompLabel, contributionLabel, stereotypeLabel, changeLabel;
+    //private Label decompLabel, contributionLabel, stereotypeLabel, changeLabel;
+    // The per-connection decomposition-type label was moved to the parent goal node
+    // (IntentionalElementFigure#setDecompositionLabelText). Commented out: the label on the
+    // decomposition connection is no longer created.
+    private Label contributionLabel, stereotypeLabel, changeLabel;
 
     /**
      * The Edit Part for LinkRefs
@@ -157,15 +161,18 @@ public class LinkRefEditPart extends AbstractConnectionEditPart {
         LinkRefConnection connection = new LinkRefConnection();
         connection.setRoutingConstraint(getLinkRef());
 
-        ConnectionEndpointLocator ce = new ConnectionEndpointLocator(connection, true);
-        ce.setUDistance(0);
-        ce.setVDistance(0);
+        // The per-connection decomposition-type label (AND/OR/XOR) has been moved to the parent
+        // goal node (IntentionalElementFigure#setDecompositionLabelText), so the label is no longer
+        // created on the decomposition connection. Commented out rather than removed.
+        //ConnectionEndpointLocator ce = new ConnectionEndpointLocator(connection, true);
+        //ce.setUDistance(0);
+        //ce.setVDistance(0);
 
-        decompLabel = new Label();
-        decompLabel.setForegroundColor(ColorManager.LINKREFLABEL);
-        decompLabel.setOpaque(true);
-        connection.add(decompLabel, ce);
-        decompLabel.setVisible(false);
+        //decompLabel = new Label();
+        //decompLabel.setForegroundColor(ColorManager.LINKREFLABEL);
+        //decompLabel.setOpaque(true);
+        //connection.add(decompLabel, ce);
+        //decompLabel.setVisible(false);
 
         // Create the contribution label
         ConnectionEndpointLocator contribce = new ConnectionEndpointLocator(connection, true);
@@ -302,7 +309,9 @@ public class LinkRefEditPart extends AbstractConnectionEditPart {
 //       System.out.println("refreshVisuals() called for LinkRef between " + getLinkRef().getLink().getSrc().getName() + " and " +  getLinkRef().getLink().getDest().getName() );
         
         // reset the label colors
-        decompLabel.setForegroundColor(ColorManager.LINKREFLABEL);
+        // The decomposition-type label is now owned by the parent goal node
+        // (IntentionalElementFigure#setDecompositionLabelText); the per-connection label is gone.
+        //decompLabel.setForegroundColor(ColorManager.LINKREFLABEL);
         contributionLabel.setForegroundColor(ColorManager.LINKREFLABEL);
         stereotypeLabel.setForegroundColor(ColorManager.LINKREFLABEL);
         changeLabel.setForegroundColor(ColorManager.LINKREFLABEL);
@@ -318,11 +327,13 @@ public class LinkRefEditPart extends AbstractConnectionEditPart {
             } else {
                 getLinkRefFigure().setType(LinkRefConnection.TYPE_DECOMPOSITION_OR);
             }
-            if (decompLabel.getText() != elem.getDecompositionType().getName()) {
-                decompLabel.setText(elem.getDecompositionType().getName());
-                decompLabel.setVisible(true);
-                
-            }
+            // The decomposition-type label (AND/OR/XOR) has been moved to the parent goal node;
+            // it is no longer set on the decomposition connection.
+            //if (decompLabel.getText() != elem.getDecompositionType().getName()) {
+            //    decompLabel.setText(elem.getDecompositionType().getName());
+            //    decompLabel.setVisible(true);
+            //    
+            //}
            
         } else if (getLinkRef().getLink() instanceof Contribution) {
             Contribution contrib = (Contribution) getLinkRef().getLink();
@@ -383,7 +394,8 @@ public class LinkRefEditPart extends AbstractConnectionEditPart {
 	        		if( EvaluationStrategyManager.getInstance().isIgnored( (IntentionalElement) getLinkRef().getLink().getDest() )
 	        				|| EvaluationStrategyManager.getInstance().isIgnored( (IntentionalElement) getLinkRef().getLink().getSrc()) 
 	        				|| ignored == true) {
-	        			decompLabel.setForegroundColor(ColorManager.GRAY);
+	        			// The decomposition-type label is now owned by the parent goal node.
+	        			//decompLabel.setForegroundColor(ColorManager.GRAY);
 	        			contributionLabel.setForegroundColor(ColorManager.GRAY);
 	        			stereotypeLabel.setForegroundColor(ColorManager.GRAY);
 	        			getLinkRefFigure().setForegroundColor(ColorManager.GRAY);

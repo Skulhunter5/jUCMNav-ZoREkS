@@ -4,6 +4,7 @@ import grl.IntentionalElementType;
 
 import org.eclipse.draw2d.ConnectionAnchor;
 import org.eclipse.draw2d.Graphics;
+import org.eclipse.draw2d.Label;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.PointList;
 import org.eclipse.draw2d.geometry.Rectangle;
@@ -26,6 +27,16 @@ public class IntentionalElementFigure extends GrlNodeFigure {
     private DecompositionAnchor decompositionTarget;
 
     /**
+     * The decomposition-type label (AND/OR/XOR) when this node is a decomposition parent,
+     * <code>null</code> otherwise. The label itself lives on the diagram's primary layer (it is
+     * managed by {@code IntentionalElementEditPart}): it cannot be a child of this node, because
+     * the layer paints every child clipped to the child's own bounds, so a node could never draw
+     * anything below itself. The figure only holds the reference so that
+     * {@link DecompositionAnchor} can aim decomposition connections at the label's position.
+     */
+    private Label decompositionLabel;
+    
+    /**
      * Default figure is a Softgoal.
      * 
      */
@@ -41,6 +52,26 @@ public class IntentionalElementFigure extends GrlNodeFigure {
 
     public ConnectionAnchor getDecompositionTarget() {
         return decompositionTarget;
+    }
+
+    /**
+     * @return the decomposition-type label (AND/OR/XOR) that hangs under this node, or
+     *         <code>null</code> when this node is not a decomposition parent.
+     */
+    public Label getDecompositionLabel() {
+        return decompositionLabel;
+    }
+
+    /**
+     * Records the decomposition-type label shown under this node, or clears it (<code>null</code>)
+     * when this node is not a decomposition parent. Positioning of the label itself is owned by
+     * {@code IntentionalElementEditPart}.
+     * 
+     * @param label
+     *            the visible decomposition-type label, or <code>null</code>
+     */
+    public void setDecompositionLabel(Label label) {
+        this.decompositionLabel = label;
     }
 
     protected void outlineShape(Graphics graphics) {
