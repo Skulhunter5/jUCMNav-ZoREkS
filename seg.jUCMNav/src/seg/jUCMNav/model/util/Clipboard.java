@@ -59,9 +59,18 @@ public class Clipboard {
      */
     protected Object getContents() {
         org.eclipse.swt.dnd.Clipboard cb = new org.eclipse.swt.dnd.Clipboard(null);
-        Object contents = cb.getContents(TRANSFER);
-        cb.dispose();
-        return contents;
+        try {
+            // GEF SimpleObjectTransfer.nativeToJava does Long.parseLong on the payload
+            // bytes and can throw (NumberFormatException) when the OS clipboard happens
+            // to hold arbitrary non-numeric text under this transfer type. Treat that as
+            // "no pasteable data" rather than failing the paste action's enabled-state
+            // update with an uncaught exception.
+            return cb.getContents(TRANSFER);
+        } catch (NumberFormatException e) {
+            return null;
+        } finally {
+            cb.dispose();
+        }
     }
 
     public URNspec getOriginalURNspec() {
