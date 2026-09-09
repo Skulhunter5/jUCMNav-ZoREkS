@@ -73,10 +73,8 @@ public abstract class ExportImage implements IUseCaseMapExport {
                     graphics.translate(-pane.getBounds().x, -pane.getBounds().y);
                     pane.paint(graphics);
 
-                    ImageLoader loader = new ImageLoader();
-                    loader.data = new ImageData[] { ReportUtils.cropImage(image.getImageData()) };
-                    // loader.data = new ImageData[] { image.getImageData() };
-                    loader.save(fos, getType());
+                    ImageData imageData = ReportUtils.cropImage(image.getImageData());
+                    saveImage(imageData, fos);
                 } finally {
                     pane.setScale(pane.getScale() - 0.001);
                     if (graphics != null) graphics.dispose();
@@ -85,6 +83,19 @@ public abstract class ExportImage implements IUseCaseMapExport {
                 }
             }
         });
+    }
+
+    /**
+     * Hook to write {@link ImageData} to the stream, called from
+     * {@link #export(IFigure, FileOutputStream)} after painting and cropping. The default
+     * implementation uses {@link ImageLoader}; subclasses whose format cannot be written
+     * reliably by the SWT native writer (e.g. JPEG on GTK, see {@link ExportImageJPG})
+     * override it.
+     */
+    protected void saveImage(ImageData imageData, FileOutputStream fos) {
+        ImageLoader loader = new ImageLoader();
+        loader.data = new ImageData[] { imageData };
+        loader.save(fos, getType());
     }
 
     public void export(IFigure pane, String path) {

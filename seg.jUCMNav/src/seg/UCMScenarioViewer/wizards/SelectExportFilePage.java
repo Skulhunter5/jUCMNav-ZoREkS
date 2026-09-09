@@ -50,6 +50,8 @@ import seg.UCMScenarioViewer.UCMScenarioViewer;
 import seg.UCMScenarioViewer.model.Scenario;
 import seg.UCMScenarioViewer.utils.Helper;
 
+import seg.jUCMNav.importexport.ExportImageJPG;
+
 
 /**
  * @author mkova062
@@ -289,7 +291,7 @@ public class SelectExportFilePage extends WizardPage implements SelectionListene
         else if (fileType == BMP_TYPE)
             il.save(outPath, SWT.IMAGE_BMP_RLE);
         else if (fileType == JPG_TYPE)
-            il.save(outPath, SWT.IMAGE_JPEG);
+            ExportImageJPG.saveJPEG(data, outPath);
     }
 
     /** Drain pending UI events so the viewer renders the new scenario before capture. */
