@@ -50,27 +50,41 @@ public abstract class ExportImage implements IUseCaseMapExport {
      *
      * @see seg.jUCMNav.extensionpoints.IUseCaseMapExport#export(org.eclipse.draw2d.IFigure, java.io.FileOutputStream)
      */
-    public void export(IFigure unzoomedPane, FileOutputStream fos) {
-        // generate image
-        ScalableFreeformLayeredPane pane = (ScalableFreeformLayeredPane) unzoomedPane;
-        pane.setScale(pane.getScale()+ 0.001);
-        
-        Image image = new Image(Display.getCurrent(), pane.getSize().width, pane.getSize().height);
-        GC gc = new GC(image);
-        enableAdvancedRendering(gc);
-        SWTGraphics graphics = new SWTGraphics(gc);
-        // if the bounds are in the negative x/y, we don't see them without a translation
-        graphics.translate(-pane.getBounds().x, -pane.getBounds().y);
-        pane.paint(graphics);
-        pane.setScale(pane.getScale()- 0.001);
+    public void export(IFigure unzoomedPane, final FileOutputStream fos) {
+        // ExportWizard.performFinish() runs doFinish() inside getContainer().run()
+        // which executes on a ModalContext worker thread, not the UI thread.  All SWT
+        // resource allocation (Image/GC/SWTGraphics) must happen on the UI thread, so
+        // wrap in syncExec; harmless when already on the UI thread.
+        Display.getDefault().syncExec(new Runnable() {
+            public void run() {
+                // generate image
+                ScalableFreeformLayeredPane pane = (ScalableFreeformLayeredPane) unzoomedPane;
+                pane.setScale(pane.getScale() + 0.001);
 
-        ImageLoader loader = new ImageLoader();
-        loader.data = new ImageData[] { ReportUtils.cropImage(image.getImageData()) };
-        // loader.data = new ImageData[] { image.getImageData() };
-        loader.save(fos, getType());
+                Image image = null;
+                GC gc = null;
+                SWTGraphics graphics = null;
+                try {
+                    image = new Image(Display.getDefault(), pane.getSize().width, pane.getSize().height);
+                    gc = new GC(image);
+                    enableAdvancedRendering(gc);
+                    graphics = new SWTGraphics(gc);
+                    // if the bounds are in the negative x/y, we don't see them without a translation
+                    graphics.translate(-pane.getBounds().x, -pane.getBounds().y);
+                    pane.paint(graphics);
 
-        gc.dispose();
-        image.dispose();
+                    ImageLoader loader = new ImageLoader();
+                    loader.data = new ImageData[] { ReportUtils.cropImage(image.getImageData()) };
+                    // loader.data = new ImageData[] { image.getImageData() };
+                    loader.save(fos, getType());
+                } finally {
+                    pane.setScale(pane.getScale() - 0.001);
+                    if (graphics != null) graphics.dispose();
+                    if (gc != null) gc.dispose();
+                    if (image != null) image.dispose();
+                }
+            }
+        });
     }
 
     public void export(IFigure pane, String path) {
