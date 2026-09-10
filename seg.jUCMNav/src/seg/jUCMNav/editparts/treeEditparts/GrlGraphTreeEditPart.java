@@ -15,13 +15,14 @@ import org.eclipse.swt.graphics.Image;
 
 import seg.jUCMNav.JUCMNavPlugin;
 import seg.jUCMNav.editpolicies.element.GRLGraphComponentEditPolicy;
+import seg.jUCMNav.model.commands.create.GenerateInstanceModelCommand;
 import seg.jUCMNav.model.util.DelegatingElementComparator;
 
 
 /**
  * Tree edit part for the GrlGraph
  * 
- * @author Jean-François Roy, pchen
+ * @author Jean-Franï¿½ois Roy, pchen
  * 
  */
 public class GrlGraphTreeEditPart extends UrnModelElementTreeEditPart {
@@ -70,17 +71,23 @@ public class GrlGraphTreeEditPart extends UrnModelElementTreeEditPart {
     }
 
     /**
-     * Returns an icon representing a GrlGraph.
+     * Returns an icon representing a GrlGraph. Recomputed on every call so a tree node whose model
+     * becomes (or stops being) an instance model picks the right icon instead of latching the first
+     * one it ever computed; the images are cached singletons, so identity comparison is free.
      */
     protected Image getImage() {
-        if (super.getImage() == null) {
-        	if (getGraph() instanceof FeatureDiagram)
-        		// FM icon
-        		setImage((JUCMNavPlugin.getImage("icons/fmd16.gif"))); //$NON-NLS-1$
-        	else 
-        		// GRL icon
-    			setImage((JUCMNavPlugin.getImage("icons/grl16.gif"))); //$NON-NLS-1$
-        }
+        Image icon;
+        if (getGraph() instanceof FeatureDiagram)
+            // FM icon
+            icon = JUCMNavPlugin.getImage("icons/fmd16.gif"); //$NON-NLS-1$
+        else if (GenerateInstanceModelCommand.isInstanceModel(getGraph()))
+            // instance model icon
+            icon = JUCMNavPlugin.getImage(JUCMNavPlugin.getInstanceIconDescriptor());
+        else
+            // GRL icon
+            icon = JUCMNavPlugin.getImage("icons/grl16.gif"); //$NON-NLS-1$
+        if (super.getImage() == null || super.getImage() != icon)
+            setImage(icon);
         return super.getImage();
     }
 

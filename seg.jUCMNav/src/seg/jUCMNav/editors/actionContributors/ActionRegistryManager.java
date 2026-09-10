@@ -73,6 +73,8 @@ import seg.jUCMNav.actions.DuplicateMapAction;
 import seg.jUCMNav.actions.EditStubPluginsAction;
 import seg.jUCMNav.actions.EditURNLinksAction;
 import seg.jUCMNav.actions.ExportAction;
+import seg.jUCMNav.actions.GenerateInstanceModelAction;
+import seg.jUCMNav.actions.GoToTypeModelAction;
 import seg.jUCMNav.actions.GenerateReportAction;
 import seg.jUCMNav.actions.ImportAction;
 import seg.jUCMNav.actions.ListDefinitionReferencesAction;
@@ -637,6 +639,14 @@ public class ActionRegistryManager implements IDisposable {
 
         action = new AddGrlGraphAction(editor);
         action.setText(Messages.getString("ActionRegistryManager.addGRLGraph")); //$NON-NLS-1$
+        addEditPartAction((SelectionAction) action);
+
+        action = new GenerateInstanceModelAction(editor);
+        action.setText(Messages.getString("ActionRegistryManager.generateInstanceModel")); //$NON-NLS-1$
+        addEditPartAction((SelectionAction) action);
+
+        action = new GoToTypeModelAction(editor);
+        action.setText(Messages.getString("ActionRegistryManager.goToTypeModel")); //$NON-NLS-1$
         addEditPartAction((SelectionAction) action);
 
         action = new AddFMDAction(editor);

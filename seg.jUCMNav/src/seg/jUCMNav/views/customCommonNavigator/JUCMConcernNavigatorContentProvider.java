@@ -74,6 +74,11 @@ public class JUCMConcernNavigatorContentProvider implements ITreeContentProvider
         	}
         	URNspec urnspec = jucmModelManager.getModel();
         	
+        	// the model can be missing when a resource change (e.g. saving the file) refreshes the
+        	// tree while the load fails; present an empty node instead of throwing
+        	if (urnspec == null || urnspec.getUrndef() == null)
+        	    return NO_CHILDREN;
+        	
         	children = urnspec.getUrndef().getConcerns().toArray();
         	
         }else if (Concern.class.isInstance(parentElement)) {

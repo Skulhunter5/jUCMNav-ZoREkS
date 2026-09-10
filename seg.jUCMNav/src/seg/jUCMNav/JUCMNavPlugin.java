@@ -6,6 +6,9 @@ import java.util.ResourceBundle;
 
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.ImageData;
+import org.eclipse.swt.graphics.PaletteData;
+import org.eclipse.swt.graphics.RGB;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
 
@@ -23,6 +26,7 @@ public class JUCMNavPlugin extends AbstractUIPlugin {
 
     private static HashMap imgDescriptorFactory;
     private static HashMap imgFactory;
+    private static ImageDescriptor instanceIconDescriptor;
 
     public static final String PLUGIN_ID = "seg.jUCMNav"; //$NON-NLS-1$
 
@@ -88,6 +92,35 @@ public class JUCMNavPlugin extends AbstractUIPlugin {
         }
 
         return (ImageDescriptor) imgDescriptorFactory.get(path);
+    }
+
+    /**
+     * Returns the instance-model icon: a copy of the classic GRL icon whose green fill has been
+     * recolored to amber/orange so instance and type model graphs are visually distinct. The icon
+     * is derived in memory from the proven-resolvable {@code grl16.gif} (green pixels only; the
+     * dark outline, white seams and source transparency are preserved) instead of shipping a
+     * separate resource, which keeps it working regardless of how the bundle is packaged (workspace
+     * vs. prebuilt jar).
+     */
+    public static synchronized ImageDescriptor getInstanceIconDescriptor() {
+        if (instanceIconDescriptor == null) {
+            ImageData src = getImageDescriptor("icons/grl16.gif").getImageData(); //$NON-NLS-1$
+            RGB orange = new RGB(255, 180, 0);
+            ImageData icon = new ImageData(src.width, src.height, 32,
+                    new PaletteData(0xFF0000, 0x00FF00, 0x0000FF));
+            for (int y = 0; y < src.height; y++) {
+                for (int x = 0; x < src.width; x++) {
+                    RGB rgb = src.palette.getRGB(src.getPixel(x, y));
+                    boolean greenFill = rgb.green > 110 && rgb.green > rgb.red + 20 && rgb.green > rgb.blue + 20;
+                    int v = greenFill ? (orange.red << 16 | orange.green << 8 | orange.blue)
+                            : (rgb.red << 16 | rgb.green << 8 | rgb.blue);
+                    icon.setPixel(x, y, v);
+                    icon.setAlpha(x, y, src.getAlpha(x, y));
+                }
+            }
+            instanceIconDescriptor = ImageDescriptor.createFromImageData(icon);
+        }
+        return instanceIconDescriptor;
     }
 
     public static Image getImage(String path) {

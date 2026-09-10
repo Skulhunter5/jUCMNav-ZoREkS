@@ -55,6 +55,8 @@ import seg.jUCMNav.actions.DuplicateMapAction;
 import seg.jUCMNav.actions.EditStubPluginsAction;
 import seg.jUCMNav.actions.EditURNLinksAction;
 import seg.jUCMNav.actions.ExportAction;
+import seg.jUCMNav.actions.GenerateInstanceModelAction;
+import seg.jUCMNav.actions.GoToTypeModelAction;
 import seg.jUCMNav.actions.GenerateReportAction;
 import seg.jUCMNav.actions.ImportAction;
 import seg.jUCMNav.actions.ListDefinitionReferencesAction;
@@ -472,6 +474,14 @@ public class UrnContextMenuProvider extends ContextMenuProvider {
             manager.appendToGroup(GEFActionConstants.GROUP_REST, action);
 
         action = getActionRegistry().getAction(AddGrlGraphAction.ADDGRLGRAPH);
+        if (action.isEnabled())
+            manager.appendToGroup(GEFActionConstants.GROUP_REST, action);
+
+        action = getActionRegistry().getAction(GenerateInstanceModelAction.GENERATEINSTANCEMODEL);
+        if (action.isEnabled())
+            manager.appendToGroup(GEFActionConstants.GROUP_REST, action);
+
+        action = getActionRegistry().getAction(GoToTypeModelAction.GOTOTYPEMODEL);
         if (action.isEnabled())
             manager.appendToGroup(GEFActionConstants.GROUP_REST, action);
         

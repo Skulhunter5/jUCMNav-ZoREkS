@@ -15,6 +15,7 @@ import grl.GRLGraph;
 import grl.ImpactModel;
 import grl.IntentionalElement;
 import seg.jUCMNav.JUCMNavPlugin;
+import seg.jUCMNav.model.commands.create.GenerateInstanceModelCommand;
 import ucm.map.UCMmap;
 import urncore.Component;
 import urncore.Concern;
@@ -43,7 +44,10 @@ public class JUCMConcernNavigatorLabelProvider implements ILabelProvider {
        		if ( currentDiagram instanceof FeatureDiagram){
        			image = JUCMNavPlugin.getImage(JUCMNavPlugin.getImageDescriptor("icons/fmd16.gif"));
        		}else if ( currentDiagram instanceof GRLGraph){
-       			image = JUCMNavPlugin.getImage(JUCMNavPlugin.getImageDescriptor("icons/grl16.gif"));
+       			if (GenerateInstanceModelCommand.isInstanceModel((GRLGraph) currentDiagram))
+       				image = JUCMNavPlugin.getImage(JUCMNavPlugin.getInstanceIconDescriptor());
+       			else
+       				image = JUCMNavPlugin.getImage(JUCMNavPlugin.getImageDescriptor("icons/grl16.gif"));
        		}else if ( currentDiagram instanceof UCMmap){
        			image = JUCMNavPlugin.getImage(JUCMNavPlugin.getImageDescriptor("icons/ucm16.gif"));
        		}
