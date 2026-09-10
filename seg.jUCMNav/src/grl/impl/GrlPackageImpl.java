@@ -947,6 +947,24 @@ public class GrlPackageImpl extends EPackageImpl implements GrlPackage {
      * <!-- end-user-doc -->
 	 * @generated
 	 */
+    public EAttribute getDependency_SrcMultiplicity() {
+		return (EAttribute)dependencyEClass.getEStructuralFeatures().get(0);
+	}
+
+    /**
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public EAttribute getDependency_DestMultiplicity() {
+		return (EAttribute)dependencyEClass.getEStructuralFeatures().get(1);
+	}
+
+    /**
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @generated
+	 */
     public EClass getEvaluation() {
 		return evaluationEClass;
 	}
@@ -1686,6 +1704,8 @@ public class GrlPackageImpl extends EPackageImpl implements GrlPackage {
 		decompositionEClass = createEClass(DECOMPOSITION);
 
 		dependencyEClass = createEClass(DEPENDENCY);
+		createEAttribute(dependencyEClass, DEPENDENCY__SRC_MULTIPLICITY);
+		createEAttribute(dependencyEClass, DEPENDENCY__DEST_MULTIPLICITY);
 
 		evaluationEClass = createEClass(EVALUATION);
 		createEAttribute(evaluationEClass, EVALUATION__EVALUATION);
@@ -1905,6 +1925,8 @@ public class GrlPackageImpl extends EPackageImpl implements GrlPackage {
 		initEClass(decompositionEClass, Decomposition.class, "Decomposition", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 
 		initEClass(dependencyEClass, Dependency.class, "Dependency", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getDependency_SrcMultiplicity(), ecorePackage.getEString(), "srcMultiplicity", null, 0, 1, Dependency.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDependency_DestMultiplicity(), ecorePackage.getEString(), "destMultiplicity", null, 0, 1, Dependency.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(evaluationEClass, Evaluation.class, "Evaluation", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getEvaluation_Evaluation(), ecorePackage.getEInt(), "evaluation", "0", 0, 1, Evaluation.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);

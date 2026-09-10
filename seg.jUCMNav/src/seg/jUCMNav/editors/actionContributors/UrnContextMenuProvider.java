@@ -37,6 +37,7 @@ import seg.jUCMNav.actions.BindWithParent;
 import seg.jUCMNav.actions.ChangeColorAction;
 import seg.jUCMNav.actions.ChangeComponentTypeAction;
 import seg.jUCMNav.actions.ChangeCorrelationAction;
+import seg.jUCMNav.actions.ChangeDependencyMultiplicityAction;
 import seg.jUCMNav.actions.ChangeDecompositionTypeAction;
 import seg.jUCMNav.actions.ChangeLinkMandatoryAction;
 import seg.jUCMNav.actions.ChangeImpactAnalysisAction;
@@ -404,6 +405,14 @@ public class UrnContextMenuProvider extends ContextMenuProvider {
 
         // GRL correlation
         action = getActionRegistry().getAction(ChangeCorrelationAction.CHANGECORRELATION);
+        if (action.isEnabled())
+            manager.appendToGroup(GEFActionConstants.GROUP_REST, action);
+
+        action = getActionRegistry().getAction(ChangeDependencyMultiplicityAction.SET_SOURCE_MULTIPLICITY);
+        if (action.isEnabled())
+            manager.appendToGroup(GEFActionConstants.GROUP_REST, action);
+
+        action = getActionRegistry().getAction(ChangeDependencyMultiplicityAction.SET_TARGET_MULTIPLICITY);
         if (action.isEnabled())
             manager.appendToGroup(GEFActionConstants.GROUP_REST, action);
 

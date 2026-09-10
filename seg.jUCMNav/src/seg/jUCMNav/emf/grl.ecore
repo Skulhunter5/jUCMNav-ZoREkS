@@ -133,7 +133,10 @@
         eOpposite="#//GRLLinkableElement/linksSrc"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="Decomposition" eSuperTypes="#//ElementLink"/>
-  <eClassifiers xsi:type="ecore:EClass" name="Dependency" eSuperTypes="#//ElementLink"/>
+  <eClassifiers xsi:type="ecore:EClass" name="Dependency" eSuperTypes="#//ElementLink">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="srcMultiplicity" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="destMultiplicity" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
   <eClassifiers xsi:type="ecore:EEnum" name="DecompositionType">
     <eLiterals name="And"/>
     <eLiterals name="Or" value="1"/>

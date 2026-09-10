@@ -54,6 +54,7 @@ import seg.jUCMNav.actions.BindWithParent;
 import seg.jUCMNav.actions.ChangeColorAction;
 import seg.jUCMNav.actions.ChangeComponentTypeAction;
 import seg.jUCMNav.actions.ChangeCorrelationAction;
+import seg.jUCMNav.actions.ChangeDependencyMultiplicityAction;
 import seg.jUCMNav.actions.ChangeDecompositionTypeAction;
 import seg.jUCMNav.actions.ChangeImpactAnalysisAction;
 import seg.jUCMNav.actions.ChangeImpactAnalysisModificationAction;
@@ -174,6 +175,7 @@ import seg.jUCMNav.actions.scenarios.StopStrategyDifferenceModeAction;
 import seg.jUCMNav.actions.scenarios.VariableInitializationsAction;
 import seg.jUCMNav.editors.UCMNavMultiPageEditor;
 import seg.jUCMNav.editors.UrnEditor;
+import seg.jUCMNav.model.commands.transformations.ChangeDependencyMultiplicityCommand;
 import seg.jUCMNav.scenarios.ScenarioUtils;
 
 /**
@@ -606,6 +608,14 @@ public class ActionRegistryManager implements IDisposable {
 
         action = new ChangeCorrelationAction(editor);
         action.setText(Messages.getString("ActionRegistryManager.changeCorrelation")); //$NON-NLS-1$
+        addEditPartAction((SelectionAction) action);
+
+        action = new ChangeDependencyMultiplicityAction(editor, ChangeDependencyMultiplicityCommand.SOURCE);
+        action.setText(Messages.getString("ActionRegistryManager.setSrcMultiplicity")); //$NON-NLS-1$
+        addEditPartAction((SelectionAction) action);
+
+        action = new ChangeDependencyMultiplicityAction(editor, ChangeDependencyMultiplicityCommand.TARGET);
+        action.setText(Messages.getString("ActionRegistryManager.setDestMultiplicity")); //$NON-NLS-1$
         addEditPartAction((SelectionAction) action);
 
         action = new AddMapAction(editor);

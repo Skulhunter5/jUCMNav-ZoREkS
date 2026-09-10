@@ -4,6 +4,7 @@ import grl.Contribution;
 import grl.ContributionChange;
 import grl.ContributionRange;
 import grl.ContributionType;
+import grl.Dependency;
 import grl.ElementLink;
 import grl.LinkRef;
 
@@ -20,6 +21,11 @@ import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.ui.views.properties.PropertyDescriptor;
 import org.eclipse.ui.views.properties.TextPropertyDescriptor;
 
+import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.ui.PlatformUI;
+
+import seg.jUCMNav.Messages;
+import seg.jUCMNav.model.util.DependencyMultiplicity;
 import seg.jUCMNav.model.util.EObjectClassNameComparator;
 import seg.jUCMNav.strategies.EvaluationStrategyManager;
 import seg.jUCMNav.views.property.descriptors.ContributionRangePropertyDescriptor;
@@ -28,7 +34,7 @@ import urn.URNspec;
 /**
  * Property source for LinkRefs
  * 
- * @author Jean-François Roy, sghanava
+ * @author Jean-Franï¿½ois Roy, sghanava
  * 
  */
 public class LinkRefPropertySource extends URNElementPropertySource {
@@ -162,9 +168,23 @@ public class LinkRefPropertySource extends URNElementPropertySource {
             } else {
                 super.setPropertyValue(id, value);
             }
+        } else if (isDependencyMultiplicityFeature(feature)) {
+            String input = String.valueOf(value).trim();
+            if (!DependencyMultiplicity.isValid(input)) {
+                MessageDialog.openError(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(),
+                        Messages.getString("MultiplicityDialog.title"),
+                        Messages.getString("MultiplicityDialog.invalid")); //$NON-NLS-1$ //$NON-NLS-2$
+                return;
+            }
+            element.eSet(feature, input.length() == 0 ? "" : DependencyMultiplicity.normalizeStored(input)); //$NON-NLS-1$
         } else {
             super.setPropertyValue(id, value);
         }
+    }
+
+    private static boolean isDependencyMultiplicityFeature(EStructuralFeature feature) {
+        return feature.getContainerClass() == Dependency.class
+                && ("srcMultiplicity".equals(feature.getName()) || "destMultiplicity".equals(feature.getName())); //$NON-NLS-1$ //$NON-NLS-2$
     }
 
     protected void setReferencedObject(PropertyID propertyid, EStructuralFeature feature, Object result) {

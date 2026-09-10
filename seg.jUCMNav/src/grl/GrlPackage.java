@@ -2056,13 +2056,31 @@ public interface GrlPackage extends EPackage {
     int DEPENDENCY__SRC = ELEMENT_LINK__SRC;
 
     /**
+	 * The feature id for the '<em><b>Src Multiplicity</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+    int DEPENDENCY__SRC_MULTIPLICITY = ELEMENT_LINK_FEATURE_COUNT + 0;
+
+    /**
+	 * The feature id for the '<em><b>Dest Multiplicity</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+    int DEPENDENCY__DEST_MULTIPLICITY = ELEMENT_LINK_FEATURE_COUNT + 1;
+
+    /**
 	 * The number of structural features of the '<em>Dependency</em>' class.
 	 * <!-- begin-user-doc -->
      * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-    int DEPENDENCY_FEATURE_COUNT = ELEMENT_LINK_FEATURE_COUNT + 0;
+    int DEPENDENCY_FEATURE_COUNT = ELEMENT_LINK_FEATURE_COUNT + 2;
 
     /**
 	 * The meta object id for the '{@link grl.impl.EvaluationImpl <em>Evaluation</em>}' class.
@@ -3992,6 +4010,28 @@ public interface GrlPackage extends EPackage {
     EClass getDependency();
 
     /**
+	 * Returns the meta object for the attribute '{@link grl.Dependency#getSrcMultiplicity <em>Src Multiplicity</em>}'.
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Src Multiplicity</em>'.
+	 * @see grl.Dependency#getSrcMultiplicity()
+	 * @see #getDependency()
+	 * @generated
+	 */
+    EAttribute getDependency_SrcMultiplicity();
+
+    /**
+	 * Returns the meta object for the attribute '{@link grl.Dependency#getDestMultiplicity <em>Dest Multiplicity</em>}'.
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Dest Multiplicity</em>'.
+	 * @see grl.Dependency#getDestMultiplicity()
+	 * @see #getDependency()
+	 * @generated
+	 */
+	EAttribute getDependency_DestMultiplicity();
+
+    /**
 	 * Returns the meta object for class '{@link grl.Evaluation <em>Evaluation</em>}'.
 	 * <!-- begin-user-doc -->
      * <!-- end-user-doc -->
@@ -5261,6 +5301,22 @@ public interface GrlPackage extends EPackage {
 		 * @generated
 		 */
 		EClass DEPENDENCY = eINSTANCE.getDependency();
+
+        /**
+		 * The meta object literal for the '<em><b>Src Multiplicity</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute DEPENDENCY__SRC_MULTIPLICITY = eINSTANCE.getDependency_SrcMultiplicity();
+
+        /**
+		 * The meta object literal for the '<em><b>Dest Multiplicity</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute DEPENDENCY__DEST_MULTIPLICITY = eINSTANCE.getDependency_DestMultiplicity();
 
         /**
 		 * The meta object literal for the '{@link grl.impl.EvaluationImpl <em>Evaluation</em>}' class.

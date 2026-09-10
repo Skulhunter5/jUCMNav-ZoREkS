@@ -20,14 +20,20 @@ import org.eclipse.draw2d.Connection;
 import org.eclipse.draw2d.ConnectionEndpointLocator;
 import org.eclipse.draw2d.IFigure;
 import org.eclipse.draw2d.Label;
-//import org.eclipse.draw2d.geometry.Point;
+import org.eclipse.draw2d.geometry.Point;
+
 import org.eclipse.emf.common.notify.Adapter;
 import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.common.notify.Notifier;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.gef.EditPolicy;
+import org.eclipse.gef.Request;
+import org.eclipse.gef.RequestConstants;
 import org.eclipse.gef.editparts.AbstractConnectionEditPart;
+import org.eclipse.gef.requests.SelectionRequest;
+import org.eclipse.jface.dialogs.IDialogConstants;
+import org.eclipse.ui.PlatformUI;
 //import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.views.properties.IPropertySource;
 
@@ -40,9 +46,13 @@ import seg.jUCMNav.figures.ColorManager;
 import seg.jUCMNav.figures.LinkRefConnection;
 import seg.jUCMNav.figures.util.UrnMetadata;
 //import seg.jUCMNav.model.ModelCreationFactory;
+import seg.jUCMNav.model.commands.transformations.ChangeDependencyMultiplicityCommand;
+import seg.jUCMNav.model.util.DependencyMultiplicity;
 import seg.jUCMNav.model.util.MetadataHelper;
 import seg.jUCMNav.strategies.EvaluationStrategyManager;
+import seg.jUCMNav.strategies.util.ReusedElementUtil;
 import seg.jUCMNav.views.preferences.StrategyEvaluationPreferences;
+import seg.jUCMNav.views.dialogs.MultiplicityDialog;
 import seg.jUCMNav.views.property.LinkRefPropertySource;
 import urncore.IURNDiagram;
 import urncore.Metadata;
@@ -66,6 +76,9 @@ public class LinkRefEditPart extends AbstractConnectionEditPart {
     // (IntentionalElementFigure#setDecompositionLabelText). Commented out: the label on the
     // decomposition connection is no longer created.
     private Label contributionLabel, stereotypeLabel, changeLabel;
+
+    // Multiplicity labels for GRL dependencies: one per end, anchored to the first/last segment.
+    private Label srcMultLabel, tgtMultLabel;
 
     /**
      * The Edit Part for LinkRefs
@@ -204,11 +217,88 @@ public class LinkRefEditPart extends AbstractConnectionEditPart {
         connection.add(changeLabel, depce);
         changeLabel.setVisible(false);
 
+        // Create the dependency multiplicity labels: source end (first segment) and target end
+        // (last segment), hugging the connection like the contribution label rather than being
+        // pushed toward the connected element.
+        ConnectionEndpointLocator srcMultce = new ConnectionEndpointLocator(connection, false);
+        srcMultce.setUDistance(10);
+        srcMultce.setVDistance(4);
+
+        srcMultLabel = new Label();
+        srcMultLabel.setForegroundColor(ColorManager.LINKREFLABEL);
+        connection.add(srcMultLabel, srcMultce);
+        srcMultLabel.setVisible(false);
+
+        ConnectionEndpointLocator tgtMultce = new ConnectionEndpointLocator(connection, true);
+        tgtMultce.setUDistance(10);
+        tgtMultce.setVDistance(4);
+
+        tgtMultLabel = new Label();
+        tgtMultLabel.setForegroundColor(ColorManager.LINKREFLABEL);
+        connection.add(tgtMultLabel, tgtMultce);
+        tgtMultLabel.setVisible(false);
+
         return connection;
+    }
+
+    /**
+     * Opens the multiplicity dialog for one end of the dependency and executes the resulting
+     * change command on the viewer's command stack.
+     */
+    private void openMultiplicityDialog(int end) {
+        if (!(getLinkRef().getLink() instanceof Dependency) || ReusedElementUtil.isReuseLink(getLinkRef().getLink()))
+            return;
+
+        Dependency depend = (Dependency) getLinkRef().getLink();
+        String current = end == ChangeDependencyMultiplicityCommand.TARGET ? depend.getDestMultiplicity()
+                : depend.getSrcMultiplicity();
+
+        MultiplicityDialog dialog = new MultiplicityDialog(
+                PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(),
+                DependencyMultiplicity.normalizeStored(current));
+        if (dialog.open() == IDialogConstants.OK_ID) {
+            getViewer().getEditDomain().getCommandStack()
+                    .execute(new ChangeDependencyMultiplicityCommand(depend, end, dialog.getValue()));
+        }
+    }
+
+    /**
+     * A double-click on a multiplicity label opens the multiplicity dialog for that end. Figure
+     * mouse listeners never fire for connection decorations (GEF routes double-clicks to the edit
+     * part), so the label bounds are hit-tested here, in the same coordinate space as the request.
+     *
+     * @see org.eclipse.gef.EditPart#performRequest(org.eclipse.gef.Request)
+     */
+    @Override
+    public void performRequest(Request request) {
+        if (RequestConstants.REQ_OPEN.equals(request.getType()) && request instanceof SelectionRequest) {
+            Point location = ((SelectionRequest) request).getLocation().getCopy();
+            if (getLinkRef().getLink() instanceof Dependency && !ReusedElementUtil.isReuseLink(getLinkRef().getLink())) {
+                if (srcMultLabel.isVisible() && srcMultLabel.getBounds().contains(location)) {
+                    openMultiplicityDialog(ChangeDependencyMultiplicityCommand.SOURCE);
+                    return;
+                }
+                if (tgtMultLabel.isVisible() && tgtMultLabel.getBounds().contains(location)) {
+                    openMultiplicityDialog(ChangeDependencyMultiplicityCommand.TARGET);
+                    return;
+                }
+            }
+        }
+        super.performRequest(request);
     }
     
     public Connection getConnectionFigure() {
         return (Connection)getFigure();
+    }
+
+    /**
+     * Updates a dependency multiplicity label: shows the text only when present.
+     */
+    private void setMultiplicityLabel(Label label, String text) {
+        if (!text.equals(label.getText())) {
+            label.setText(text);
+            label.setVisible(!text.isEmpty());
+        }
     }
 
     /**
@@ -316,6 +406,12 @@ public class LinkRefEditPart extends AbstractConnectionEditPart {
         stereotypeLabel.setForegroundColor(ColorManager.LINKREFLABEL);
         changeLabel.setForegroundColor(ColorManager.LINKREFLABEL);
         getLinkRefFigure().setForegroundColor(ColorManager.LINE);
+
+        // Multiplicity labels only exist on dependencies; clear them for every other link type.
+        srcMultLabel.setText("");
+        srcMultLabel.setVisible(false);
+        tgtMultLabel.setText("");
+        tgtMultLabel.setVisible(false);
         
         //int evalType = EvaluationStrategyManager.getInstance().getEvaluationAlgorithm().getEvaluationType();
 
@@ -358,8 +454,10 @@ public class LinkRefEditPart extends AbstractConnectionEditPart {
                 }
             }
         } else if (getLinkRef().getLink() instanceof Dependency) {
-            // Dependency depend = (Dependency)getLinkRef().getLink();
+            Dependency depend = (Dependency) getLinkRef().getLink();
             getLinkRefFigure().setType(LinkRefConnection.TYPE_DEPENDENCY);
+            setMultiplicityLabel(srcMultLabel, DependencyMultiplicity.toDisplay(depend.getSrcMultiplicity()));
+            setMultiplicityLabel(tgtMultLabel, DependencyMultiplicity.toDisplay(depend.getDestMultiplicity()));
         }
         
         //If TimedGRL algorithm selected and design view is active, then add change label if required
