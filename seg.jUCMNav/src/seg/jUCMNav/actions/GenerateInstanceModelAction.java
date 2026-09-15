@@ -111,6 +111,8 @@ public class GenerateInstanceModelAction extends URNSelectionAction {
             return Messages.getString("GenerateInstanceModelCommand.problemFreeFloating"); //$NON-NLS-1$
         case DEPENDENCY:
             return Messages.getString("GenerateInstanceModelCommand.problemDependency"); //$NON-NLS-1$
+        case DEPENDENCY_SOURCE_MULTIPLICITY:
+            return Messages.getString("GenerateInstanceModelCommand.problemDependencySourceMultiplicity"); //$NON-NLS-1$
         case NO_ACTOR:
             return Messages.getString("GenerateInstanceModelCommand.problemNoActor"); //$NON-NLS-1$
         default:

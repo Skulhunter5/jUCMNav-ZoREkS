@@ -161,6 +161,24 @@ public interface GrlFactory extends EFactory {
     GRLNode createGRLNode();
 
     /**
+	 * Returns a new object of class '<em>Grouped Dependency</em>'.
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Grouped Dependency</em>'.
+	 * @generated
+	 */
+    GroupedDependency createGroupedDependency();
+
+    /**
+	 * Returns a new object of class '<em>Grouped Dependency Link</em>'.
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Grouped Dependency Link</em>'.
+	 * @generated
+	 */
+    GroupedDependencyLink createGroupedDependencyLink();
+
+    /**
 	 * Returns a new object of class '<em>Link Ref Bendpoint</em>'.
 	 * <!-- begin-user-doc -->
      * <!-- end-user-doc -->

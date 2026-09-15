@@ -62,6 +62,8 @@ public class ChangeLinkMandatoryAction extends ChangeLinkAction
             	return false;
         } else if (sel.getSelectionType() == sel.LINKREF) {
         	LinkRef linkRef = sel.getLinkref();
+        	if (!(linkRef.getSource() instanceof IntentionalElementRef))
+        		return false;
         	elementRef = (IntentionalElementRef) linkRef.getSource();
         	
         	if (elementRef.getDef() instanceof Feature && linkRef.getLink() instanceof OptionalFMLink) {

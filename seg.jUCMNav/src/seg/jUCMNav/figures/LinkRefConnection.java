@@ -32,6 +32,7 @@ public class LinkRefConnection extends PolylineConnection {
     public static final int TYPE_DEPENDENCY = 4;
     public static final int TYPE_MANDATORY =5;
     public static final int TYPE_OPTIONAL =6;
+    public static final int TYPE_GROUPED_DEPENDENCY =7;
 
     private int type;
     private PolylineDecoration contribution;

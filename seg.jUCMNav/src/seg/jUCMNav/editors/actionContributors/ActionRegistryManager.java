@@ -55,6 +55,8 @@ import seg.jUCMNav.actions.ChangeColorAction;
 import seg.jUCMNav.actions.ChangeComponentTypeAction;
 import seg.jUCMNav.actions.ChangeCorrelationAction;
 import seg.jUCMNav.actions.ChangeDependencyMultiplicityAction;
+import seg.jUCMNav.actions.ChangeGroupedDependencyTargetMultiplicityAction;
+import seg.jUCMNav.actions.SetGroupedDependencyOrientationOverrideAction;
 import seg.jUCMNav.actions.ChangeDecompositionTypeAction;
 import seg.jUCMNav.actions.ChangeImpactAnalysisAction;
 import seg.jUCMNav.actions.ChangeImpactAnalysisModificationAction;
@@ -176,6 +178,7 @@ import seg.jUCMNav.actions.scenarios.VariableInitializationsAction;
 import seg.jUCMNav.editors.UCMNavMultiPageEditor;
 import seg.jUCMNav.editors.UrnEditor;
 import seg.jUCMNav.model.commands.transformations.ChangeDependencyMultiplicityCommand;
+import seg.jUCMNav.model.commands.transformations.ChangeGroupedDependencyOrientationOverrideCommand;
 import seg.jUCMNav.scenarios.ScenarioUtils;
 
 /**
@@ -616,6 +619,21 @@ public class ActionRegistryManager implements IDisposable {
 
         action = new ChangeDependencyMultiplicityAction(editor, ChangeDependencyMultiplicityCommand.TARGET);
         action.setText(Messages.getString("ActionRegistryManager.setDestMultiplicity")); //$NON-NLS-1$
+        addEditPartAction((SelectionAction) action);
+
+        action = new ChangeGroupedDependencyTargetMultiplicityAction(editor);
+        action.setText(Messages.getString("ActionRegistryManager.setGroupedDependencyTargetMultiplicity")); //$NON-NLS-1$
+        addEditPartAction((SelectionAction) action);
+
+        action = new SetGroupedDependencyOrientationOverrideAction(editor, ChangeGroupedDependencyOrientationOverrideCommand.TOP);
+        addEditPartAction((SelectionAction) action);
+        action = new SetGroupedDependencyOrientationOverrideAction(editor, ChangeGroupedDependencyOrientationOverrideCommand.BOTTOM);
+        addEditPartAction((SelectionAction) action);
+        action = new SetGroupedDependencyOrientationOverrideAction(editor, ChangeGroupedDependencyOrientationOverrideCommand.LEFT);
+        addEditPartAction((SelectionAction) action);
+        action = new SetGroupedDependencyOrientationOverrideAction(editor, ChangeGroupedDependencyOrientationOverrideCommand.RIGHT);
+        addEditPartAction((SelectionAction) action);
+        action = new SetGroupedDependencyOrientationOverrideAction(editor, ChangeGroupedDependencyOrientationOverrideCommand.NONE);
         addEditPartAction((SelectionAction) action);
 
         action = new AddMapAction(editor);

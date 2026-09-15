@@ -36,6 +36,8 @@ import grl.GRLNode;
 import grl.GRLspec;
 import grl.GrlFactory;
 import grl.GrlPackage;
+import grl.GroupedDependency;
+import grl.GroupedDependencyLink;
 import grl.ImpactModel;
 import grl.ImportanceType;
 import grl.IntentionalElement;
@@ -182,6 +184,20 @@ public class GrlPackageImpl extends EPackageImpl implements GrlPackage {
 	 * @generated
 	 */
     private EClass grlNodeEClass = null;
+
+    /**
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @generated
+	 */
+    private EClass groupedDependencyEClass = null;
+
+    /**
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @generated
+	 */
+    private EClass groupedDependencyLinkEClass = null;
 
     /**
 	 * <!-- begin-user-doc -->
@@ -1145,6 +1161,33 @@ public class GrlPackageImpl extends EPackageImpl implements GrlPackage {
      * <!-- end-user-doc -->
 	 * @generated
 	 */
+    public EClass getGroupedDependency() {
+		return groupedDependencyEClass;
+	}
+
+    /**
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @generated
+	 */
+    public EClass getGroupedDependencyLink() {
+		return groupedDependencyLinkEClass;
+	}
+
+    /**
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @generated
+	 */
+    public EAttribute getGroupedDependency_DestMultiplicity() {
+		return (EAttribute)groupedDependencyEClass.getEStructuralFeatures().get(0);
+	}
+
+    /**
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @generated
+	 */
     public EClass getLinkRefBendpoint() {
 		return linkRefBendpointEClass;
 	}
@@ -1786,6 +1829,11 @@ public class GrlPackageImpl extends EPackageImpl implements GrlPackage {
 		createEReference(reusedStrategyEClass, REUSED_STRATEGY__REUSING_STRATEGIES);
 		createEReference(reusedStrategyEClass, REUSED_STRATEGY__REUSE_LINK_IN_FM);
 
+		groupedDependencyEClass = createEClass(GROUPED_DEPENDENCY);
+		createEAttribute(groupedDependencyEClass, GROUPED_DEPENDENCY__DEST_MULTIPLICITY);
+
+		groupedDependencyLinkEClass = createEClass(GROUPED_DEPENDENCY_LINK);
+
 		// Create enums
 		criticalityEEnum = createEEnum(CRITICALITY);
 		intentionalElementTypeEEnum = createEEnum(INTENTIONAL_ELEMENT_TYPE);
@@ -1848,6 +1896,8 @@ public class GrlPackageImpl extends EPackageImpl implements GrlPackage {
 		evaluationStrategyEClass.getESuperTypes().add(theUrncorePackage.getGRLmodelElement());
 		grlNodeEClass.getESuperTypes().add(theUrncorePackage.getGRLmodelElement());
 		grlNodeEClass.getESuperTypes().add(theUrncorePackage.getIURNNode());
+		groupedDependencyEClass.getESuperTypes().add(this.getGRLNode());
+		groupedDependencyLinkEClass.getESuperTypes().add(this.getElementLink());
 		beliefLinkEClass.getESuperTypes().add(theUrncorePackage.getIURNConnection());
 		strategiesGroupEClass.getESuperTypes().add(theUrncorePackage.getGRLmodelElement());
 		contributionContextGroupEClass.getESuperTypes().add(theUrncorePackage.getGRLmodelElement());
@@ -2006,6 +2056,11 @@ public class GrlPackageImpl extends EPackageImpl implements GrlPackage {
 		initEClass(reusedStrategyEClass, ReusedStrategy.class, "ReusedStrategy", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEReference(getReusedStrategy_ReusingStrategies(), this.getEvaluationStrategy(), this.getEvaluationStrategy_ReusedStrategies(), "reusingStrategies", null, 1, -1, ReusedStrategy.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getReusedStrategy_ReuseLinkInFM(), theFmPackage.getReuseLink(), null, "reuseLinkInFM", null, 1, 1, ReusedStrategy.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(groupedDependencyEClass, GroupedDependency.class, "GroupedDependency", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getGroupedDependency_DestMultiplicity(), ecorePackage.getEString(), "destMultiplicity", null, 0, 1, GroupedDependency.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(groupedDependencyLinkEClass, GroupedDependencyLink.class, "GroupedDependencyLink", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 
 		// Initialize enums and add enum literals
 		initEEnum(criticalityEEnum, Criticality.class, "Criticality");

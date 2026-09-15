@@ -27,6 +27,8 @@ import grl.EvaluationStrategy;
 import grl.GRLGraph;
 import grl.GRLNode;
 import grl.GRLspec;
+import grl.GroupedDependency;
+import grl.GroupedDependencyLink;
 import grl.GrlFactory;
 import grl.GrlPackage;
 import grl.ImportanceType;
@@ -104,6 +106,8 @@ public class GrlFactoryImpl extends EFactoryImpl implements GrlFactory {
 			case GrlPackage.EVALUATION: return createEvaluation();
 			case GrlPackage.EVALUATION_STRATEGY: return createEvaluationStrategy();
 			case GrlPackage.GRL_NODE: return createGRLNode();
+			case GrlPackage.GROUPED_DEPENDENCY: return createGroupedDependency();
+			case GrlPackage.GROUPED_DEPENDENCY_LINK: return createGroupedDependencyLink();
 			case GrlPackage.LINK_REF_BENDPOINT: return createLinkRefBendpoint();
 			case GrlPackage.BELIEF_LINK: return createBeliefLink();
 			case GrlPackage.STRATEGIES_GROUP: return createStrategiesGroup();
@@ -324,6 +328,26 @@ public class GrlFactoryImpl extends EFactoryImpl implements GrlFactory {
     public GRLNode createGRLNode() {
 		GRLNodeImpl grlNode = new GRLNodeImpl();
 		return grlNode;
+	}
+
+    /**
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @generated
+	 */
+    public GroupedDependency createGroupedDependency() {
+		GroupedDependencyImpl groupedDependency = new GroupedDependencyImpl();
+		return groupedDependency;
+	}
+
+    /**
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @generated
+	 */
+    public GroupedDependencyLink createGroupedDependencyLink() {
+		GroupedDependencyLinkImpl groupedDependencyLink = new GroupedDependencyLinkImpl();
+		return groupedDependencyLink;
 	}
 
     /**

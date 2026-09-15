@@ -2,8 +2,10 @@ package seg.jUCMNav.tests.model;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
@@ -35,6 +37,8 @@ import grl.Dependency;
 import grl.ElementLink;
 import grl.GRLGraph;
 import grl.GrlFactory;
+import grl.GroupedDependency;
+import grl.GroupedDependencyLink;
 import grl.IntentionalElement;
 import grl.IntentionalElementRef;
 import grl.IntentionalElementType;
@@ -46,6 +50,8 @@ import seg.jUCMNav.editparts.treeEditparts.GrlGraphTreeEditPart;
 import seg.jUCMNav.model.commands.create.CreateGrlGraphCommand;
 import seg.jUCMNav.model.commands.create.GenerateInstanceModelCommand;
 import seg.jUCMNav.model.commands.create.GenerateInstanceModelCommand.GenerationProblem;
+import seg.jUCMNav.model.commands.delete.DeleteGRLNodeCommand;
+import seg.jUCMNav.model.commands.transformations.ChangeGroupedDependencyTargetMultiplicityCommand;
 import seg.jUCMNav.strategies.util.ReusedElementUtil;
 import urn.URNspec;
 import urn.UrnFactory;
@@ -173,14 +179,39 @@ public class GenerateInstanceModelCommandTest {
     }
 
     @Test
-    public void analyzeCrossActorDependency() {
+    public void analyzeCrossActorDependencyAllowed() {
         GRLGraph graph = newGraph("G");
         ActorRef a = addActor(graph, "A", 100, 100);
         ActorRef b = addActor(graph, "B", 300, 300);
         IntentionalElementRef aie = addIE(graph, a, "Goal", IntentionalElementType.GOAL_LITERAL, 10, 20);
         IntentionalElementRef bie = addIE(graph, b, "Task", IntentionalElementType.TASK_LITERAL, 10, 20);
         connect(graph, aie, bie, false);
+        assertEquals(GenerationProblem.NONE, GenerateInstanceModelCommand.analyze(graph));
+    }
+
+    @Test
+    public void analyzeCrossActorContributionRejected() {
+        GRLGraph graph = newGraph("G");
+        ActorRef a = addActor(graph, "A", 100, 100);
+        ActorRef b = addActor(graph, "B", 300, 300);
+        IntentionalElementRef aie = addIE(graph, a, "Goal", IntentionalElementType.GOAL_LITERAL, 10, 20);
+        IntentionalElementRef bie = addIE(graph, b, "Task", IntentionalElementType.TASK_LITERAL, 10, 20);
+        connect(graph, aie, bie, true);
         assertEquals(GenerationProblem.DEPENDENCY, GenerateInstanceModelCommand.analyze(graph));
+    }
+
+    @Test
+    public void analyzeDependencySourceMultiplicityRejected() {
+        GRLGraph graph = newGraph("G");
+        ActorRef a = addActor(graph, "A", 100, 100);
+        ActorRef b = addActor(graph, "B", 300, 300);
+        IntentionalElementRef aie = addIE(graph, a, "Goal", IntentionalElementType.GOAL_LITERAL, 10, 20);
+        IntentionalElementRef bie = addIE(graph, b, "Task", IntentionalElementType.TASK_LITERAL, 10, 20);
+        Dependency dep = GrlFactory.eINSTANCE.createDependency();
+        dep.setSrcMultiplicity("1..1"); //$NON-NLS-1$
+        connect(graph, aie, bie, dep);
+        assertEquals(GenerationProblem.DEPENDENCY_SOURCE_MULTIPLICITY,
+                GenerateInstanceModelCommand.analyze(graph));
     }
 
     // ---------------------------------------------------------------- generation
@@ -543,6 +574,352 @@ public class GenerateInstanceModelCommandTest {
         // an instance model loaded from disk must still be recognized, otherwise the Outline
         // (and 'Go to type model') would silently show it as a plain GRL graph
         assertTrue(GenerateInstanceModelCommand.isInstanceModel(loadedInstance));
+    }
+
+    @Test
+    public void crossActorDependencyGeneratesGroupedBox() {
+        GRLGraph source = newGraph("TypeModel");
+        ActorRef actorA = addActor(source, "A", 100, 100);
+        ActorRef actorB = addActor(source, "B", 300, 300);
+        IntentionalElementRef aie = addIE(source, actorA, "Goal", IntentionalElementType.GOAL_LITERAL, 30, 40);
+        IntentionalElementRef bie = addIE(source, actorB, "Task", IntentionalElementType.TASK_LITERAL, 30, 40);
+        connect(source, aie, bie, false);
+
+        Map<ActorRef, Integer> counts = new LinkedHashMap<ActorRef, Integer>();
+        counts.put(actorA, Integer.valueOf(2));
+        counts.put(actorB, Integer.valueOf(1));
+        GenerateInstanceModelCommand command = new GenerateInstanceModelCommand(urn, source, counts, 20);
+        assertTrue(command.canExecute());
+        command.execute();
+
+        GRLGraph graph = command.getDiagram();
+
+        // one box among the instance nodes, not owned by any actor
+        GroupedDependency box = findBox(graph);
+        assertNotNull(box);
+        assertNotNull(box.getDestMultiplicity());
+
+        // 2 source fans into the box + 1 fan into the target copy = one box between both sides
+        assertEquals(3, graph.getConnections().size());
+        int sourceFans = 0, targetFans = 0;
+        LinkRef boxDefRef = null;
+        for (Object o : graph.getConnections()) {
+            LinkRef ref = (LinkRef) o;
+            assertTrue(ref.getLink() instanceof GroupedDependencyLink);
+            assertSame(box, ref.getSource() instanceof GroupedDependency ? ref.getSource() : ref.getTarget());
+            if (ref.getSource() == box) {
+                targetFans++;
+                ActorRef actor = ((ActorRef) ((IntentionalElementRef) ref.getTarget()).getContRef());
+                assertTrue(actor.getName().endsWith(": B")); //$NON-NLS-1$
+            } else {
+                sourceFans++;
+            }
+            boxDefRef = ref;
+        }
+        assertEquals(2, sourceFans);
+        assertEquals(1, targetFans);
+
+        // all fans share one definition, referenced from the def lists of every instance touched
+        GroupedDependencyLink def = (GroupedDependencyLink) boxDefRef.getLink();
+        assertTrue(urn.getGrlspec().getLinks().contains(def));
+        assertEquals(3, def.getRefs().size());
+        // the adjusted target multiplicity (Nt = M = 1) lives on the box, not the definition
+        assertEquals("0..1", box.getDestMultiplicity()); //$NON-NLS-1$
+
+        // undo removes box, fans and the shared definition; redo restores them
+        command.undo();
+        assertEquals(0, graph.getNodes().size());
+        assertEquals(0, graph.getConnections().size());
+        assertFalse(urn.getGrlspec().getLinks().contains(def));
+        command.redo();
+        LinkRef refAfterRedo = (LinkRef) graph.getConnections().get(0);
+        GroupedDependencyLink rebuiltDef = (GroupedDependencyLink) refAfterRedo.getLink();
+        assertTrue(urn.getGrlspec().getLinks().contains(rebuiltDef));
+        assertEquals(3, rebuiltDef.getRefs().size());
+        assertEquals(4, graph.getNodes().size());
+        assertNotNull(findBox(graph));
+        assertEquals(3, graph.getConnections().size());
+    }
+
+    @Test
+    public void crossActorDependencyToSeveralCopies() {
+        GRLGraph source = newGraph("TypeModel");
+        ActorRef actorA = addActor(source, "A", 100, 100);
+        ActorRef actorB = addActor(source, "B", 300, 300);
+        IntentionalElementRef aie = addIE(source, actorA, "Goal", IntentionalElementType.GOAL_LITERAL, 30, 40);
+        IntentionalElementRef bie = addIE(source, actorB, "Task", IntentionalElementType.TASK_LITERAL, 30, 40);
+        connect(source, aie, bie, false);
+
+        Map<ActorRef, Integer> counts = new LinkedHashMap<ActorRef, Integer>();
+        counts.put(actorA, Integer.valueOf(1));
+        counts.put(actorB, Integer.valueOf(3));
+        GenerateInstanceModelCommand command = new GenerateInstanceModelCommand(urn, source, counts, 20);
+        command.execute();
+
+        GRLGraph graph = command.getDiagram();
+        GroupedDependency box = findBox(graph);
+        assertNotNull(box);
+        // Nt = M = 3
+        assertEquals("0..3", box.getDestMultiplicity()); //$NON-NLS-1$
+        assertEquals(4, graph.getConnections().size());
+    }
+
+    @Test
+    public void crossActorDependencyBothSidesSeveralCopies() {
+        GRLGraph source = newGraph("TypeModel");
+        ActorRef actorA = addActor(source, "A", 100, 100);
+        ActorRef actorB = addActor(source, "B", 300, 300);
+        IntentionalElementRef aie = addIE(source, actorA, "Goal", IntentionalElementType.GOAL_LITERAL, 30, 40);
+        IntentionalElementRef bie = addIE(source, actorB, "Task", IntentionalElementType.TASK_LITERAL, 30, 40);
+        connect(source, aie, bie, false);
+
+        Map<ActorRef, Integer> counts = new LinkedHashMap<ActorRef, Integer>();
+        counts.put(actorA, Integer.valueOf(2));
+        counts.put(actorB, Integer.valueOf(3));
+        GenerateInstanceModelCommand command = new GenerateInstanceModelCommand(urn, source, counts, 20);
+        command.execute();
+
+        GRLGraph graph = command.getDiagram();
+        GroupedDependency box = findBox(graph);
+        assertNotNull(box);
+        assertEquals("0..3", box.getDestMultiplicity()); //$NON-NLS-1$
+        assertEquals(5, graph.getConnections().size());
+    }
+
+    @Test
+    public void sameActorDependencyWithCopiesIsGrouped() {
+        GRLGraph source = newGraph("TypeModel");
+        ActorRef actorA = addActor(source, "A", 100, 100);
+        IntentionalElementRef aie = addIE(source, actorA, "Goal", IntentionalElementType.GOAL_LITERAL, 30, 40);
+        IntentionalElementRef bie = addIE(source, actorA, "Task", IntentionalElementType.TASK_LITERAL, 90, 40);
+        connect(source, aie, bie, false);
+
+        Map<ActorRef, Integer> counts = new LinkedHashMap<ActorRef, Integer>();
+        counts.put(actorA, Integer.valueOf(2));
+        GenerateInstanceModelCommand command = new GenerateInstanceModelCommand(urn, source, counts, 20);
+        command.execute();
+
+        GRLGraph graph = command.getDiagram();
+        // both Goal and Task have 2 copies -> N == M == 2 -> grouped
+        GroupedDependency box = findBox(graph);
+        assertNotNull(box);
+        assertEquals("0..2", box.getDestMultiplicity()); //$NON-NLS-1$
+        assertEquals(4, graph.getConnections().size());
+    }
+
+    @Test
+    public void plainDependencyStillAdjustsTargetMultiplicity() {
+        GRLGraph source = newGraph("TypeModel");
+        ActorRef actorA = addActor(source, "A", 100, 100);
+        ActorRef actorB = addActor(source, "B", 300, 300);
+        IntentionalElementRef aie = addIE(source, actorA, "Goal", IntentionalElementType.GOAL_LITERAL, 30, 40);
+        IntentionalElementRef bie = addIE(source, actorB, "Task", IntentionalElementType.TASK_LITERAL, 30, 40);
+        connect(source, aie, bie, false);
+
+        Map<ActorRef, Integer> counts = new LinkedHashMap<ActorRef, Integer>();
+        counts.put(actorA, Integer.valueOf(1));
+        counts.put(actorB, Integer.valueOf(1));
+        GenerateInstanceModelCommand command = new GenerateInstanceModelCommand(urn, source, counts, 20);
+        command.execute();
+
+        GRLGraph graph = command.getDiagram();
+        assertNull(findBox(graph));
+        assertEquals(1, graph.getConnections().size());
+        LinkRef ref = (LinkRef) graph.getConnections().get(0);
+        assertTrue(ref.getLink() instanceof Dependency);
+        // single dependency carries the adjusted target multiplicity (Nt = M = 1)
+        assertEquals("0..1", ((Dependency) ref.getLink()).getDestMultiplicity()); //$NON-NLS-1$
+        assertEquals(null, ((Dependency) ref.getLink()).getSrcMultiplicity());
+    }
+
+    @Test
+    public void existingTargetMultiplicityIsClampedToCopyCount() {
+        GRLGraph source = newGraph("TypeModel");
+        ActorRef actorA = addActor(source, "A", 100, 100);
+        ActorRef actorB = addActor(source, "B", 300, 300);
+        IntentionalElementRef aie = addIE(source, actorA, "Goal", IntentionalElementType.GOAL_LITERAL, 30, 40);
+        IntentionalElementRef bie = addIE(source, actorB, "Task", IntentionalElementType.TASK_LITERAL, 30, 40);
+        Dependency dep = GrlFactory.eINSTANCE.createDependency();
+        dep.setDestMultiplicity("2..4"); //$NON-NLS-1$
+        connect(source, aie, bie, dep);
+
+        Map<ActorRef, Integer> counts = new LinkedHashMap<ActorRef, Integer>();
+        counts.put(actorA, Integer.valueOf(1));
+        counts.put(actorB, Integer.valueOf(3));
+        GenerateInstanceModelCommand command = new GenerateInstanceModelCommand(urn, source, counts, 20);
+        command.execute();
+
+        GRLGraph graph = command.getDiagram();
+        // 2..4 with Nt = M = 3 -> upper bound clamped to 3
+        GroupedDependency box = findBox(graph);
+        assertNotNull(box);
+        assertEquals("2..3", box.getDestMultiplicity()); //$NON-NLS-1$
+    }
+
+    @Test
+    public void parallelDependenciesGetSeparateBoxes() {
+        GRLGraph source = newGraph("TypeModel");
+        ActorRef actorA = addActor(source, "A", 100, 100);
+        ActorRef actorB = addActor(source, "B", 300, 300);
+        IntentionalElementRef aie = addIE(source, actorA, "Goal", IntentionalElementType.GOAL_LITERAL, 30, 40);
+        IntentionalElementRef bie = addIE(source, actorB, "Task", IntentionalElementType.TASK_LITERAL, 30, 40);
+        connect(source, aie, bie, false);
+        connect(source, aie, bie, false);
+
+        Map<ActorRef, Integer> counts = new LinkedHashMap<ActorRef, Integer>();
+        counts.put(actorA, Integer.valueOf(2));
+        counts.put(actorB, Integer.valueOf(1));
+        GenerateInstanceModelCommand command = new GenerateInstanceModelCommand(urn, source, counts, 20);
+        command.execute();
+
+        GRLGraph graph = command.getDiagram();
+        // one box per type-model dependency, each with its own 2+1 fan set and own definition
+        assertEquals(2, countBoxes(graph));
+        assertEquals(6, graph.getConnections().size());
+        int definitions = 0;
+        for (Object o : graph.getConnections()) {
+            LinkRef ref = (LinkRef) o;
+            if (ref.getLink() instanceof GroupedDependencyLink)
+                definitions++;
+        }
+        // 6 fans against exactly 2 distinct definitions
+        java.util.Set<GroupedDependencyLink> defs = new java.util.HashSet<GroupedDependencyLink>();
+        for (Object o : graph.getConnections())
+            defs.add((GroupedDependencyLink) ((LinkRef) o).getLink());
+        assertEquals(2, defs.size());
+    }
+
+    @Test
+    public void deletingBoxCascadesToFansAndDefinition() {
+        GRLGraph source = newGraph("TypeModel");
+        ActorRef actorA = addActor(source, "A", 100, 100);
+        ActorRef actorB = addActor(source, "B", 300, 300);
+        IntentionalElementRef aie = addIE(source, actorA, "Goal", IntentionalElementType.GOAL_LITERAL, 30, 40);
+        IntentionalElementRef bie = addIE(source, actorB, "Task", IntentionalElementType.TASK_LITERAL, 30, 40);
+        connect(source, aie, bie, false);
+
+        Map<ActorRef, Integer> counts = new LinkedHashMap<ActorRef, Integer>();
+        counts.put(actorA, Integer.valueOf(2));
+        counts.put(actorB, Integer.valueOf(1));
+        GenerateInstanceModelCommand command = new GenerateInstanceModelCommand(urn, source, counts, 20);
+        // the real editor always holds the urn inside a ResourceSet resource; that is exactly what
+        // keeps the GRLNode.getSucc()/getPred() inverse lists live (they feed the delete cascade)
+        ResourceSet rs = new ResourceSetImpl();
+        rs.createResource(URI.createURI("delete.jucm")).getContents().add(urn); //$NON-NLS-1$
+        command.execute();
+        GRLGraph graph = command.getDiagram();
+
+        GroupedDependency box = findBox(graph);
+        assertNotNull(box);
+        LinkRef firstFan = (LinkRef) graph.getConnections().get(0);
+        GroupedDependencyLink sharedDef = (GroupedDependencyLink) firstFan.getLink();
+        int linksBefore = urn.getGrlspec().getLinks().size();
+
+        // deleting the box must tear down the whole group: box, fans, and the now-orphaned definition
+        DeleteGRLNodeCommand delete = new DeleteGRLNodeCommand(box);
+        delete.execute();
+        assertEquals(3, graph.getNodes().size());
+        assertEquals(0, graph.getConnections().size());
+        assertEquals(linksBefore - 1, urn.getGrlspec().getLinks().size());
+
+        // deleting it again must be a no-op, not a crash
+        DeleteGRLNodeCommand deleteAgain = new DeleteGRLNodeCommand(box);
+        deleteAgain.execute();
+        assertEquals(3, graph.getNodes().size());
+        assertEquals(0, graph.getConnections().size());
+    }
+
+    @Test
+    public void groupedDependencySurvivesSaveAndLoad() throws Exception {
+        GRLGraph source = newGraph("TypeModel");
+        ActorRef actorA = addActor(source, "A", 100, 100);
+        ActorRef actorB = addActor(source, "B", 300, 300);
+        IntentionalElementRef aie = addIE(source, actorA, "Goal", IntentionalElementType.GOAL_LITERAL, 30, 40);
+        IntentionalElementRef bie = addIE(source, actorB, "Task", IntentionalElementType.TASK_LITERAL, 30, 40);
+        connect(source, aie, bie, false);
+
+        Map<ActorRef, Integer> counts = new LinkedHashMap<ActorRef, Integer>();
+        counts.put(actorA, Integer.valueOf(2));
+        counts.put(actorB, Integer.valueOf(1));
+        GenerateInstanceModelCommand command = new GenerateInstanceModelCommand(urn, source, counts, 20);
+        command.execute();
+        String instanceId = command.getDiagram().getId();
+
+        ResourceSet rs = new ResourceSetImpl();
+        rs.getResourceFactoryRegistry().getExtensionToFactoryMap().put("jucm", new XMIResourceFactoryImpl()); //$NON-NLS-1$
+        Resource resource = rs.createResource(URI.createURI("roundtrip.jucm")); //$NON-NLS-1$
+        resource.getContents().add(urn);
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        resource.save(bytes, null);
+
+        ResourceSet rs2 = new ResourceSetImpl();
+        rs2.getResourceFactoryRegistry().getExtensionToFactoryMap().put("jucm", new XMIResourceFactoryImpl()); //$NON-NLS-1$
+        Resource resource2 = rs2.createResource(URI.createURI("roundtrip.jucm")); //$NON-NLS-1$
+        resource2.load(new ByteArrayInputStream(bytes.toByteArray()), null);
+        URNspec loaded = (URNspec) resource2.getContents().get(0);
+
+        GRLGraph loadedInstance = null;
+        for (Object o : loaded.getUrndef().getSpecDiagrams()) {
+            if (o instanceof GRLGraph && instanceId.equals(((GRLGraph) o).getId()))
+                loadedInstance = (GRLGraph) o;
+        }
+        assertNotNull("instance graph must survive the roundtrip", loadedInstance);
+        GroupedDependency box = findBox(loadedInstance);
+        assertNotNull("box, multiplicity value and the whole fan set come back", box);
+        assertEquals("0..1", box.getDestMultiplicity()); //$NON-NLS-1$
+        assertEquals(3, loadedInstance.getConnections().size());
+        for (Object o : loadedInstance.getConnections()) {
+            LinkRef ref = (LinkRef) o;
+            assertTrue(ref.getSource() == box || ref.getTarget() == box);
+        }
+    }
+
+    @Test
+    public void changeGroupedDependencyTargetMultiplicityUndoRedo() {
+        GRLGraph source = newGraph("TypeModel");
+        ActorRef actorA = addActor(source, "A", 100, 100);
+        ActorRef actorB = addActor(source, "B", 300, 300);
+        IntentionalElementRef aie = addIE(source, actorA, "Goal", IntentionalElementType.GOAL_LITERAL, 30, 40);
+        IntentionalElementRef bie = addIE(source, actorB, "Task", IntentionalElementType.TASK_LITERAL, 30, 40);
+        connect(source, aie, bie, false);
+
+        Map<ActorRef, Integer> counts = new LinkedHashMap<ActorRef, Integer>();
+        counts.put(actorA, Integer.valueOf(2));
+        counts.put(actorB, Integer.valueOf(1));
+        GenerateInstanceModelCommand command = new GenerateInstanceModelCommand(urn, source, counts, 20);
+        command.execute();
+        GroupedDependency box = findBox(command.getDiagram());
+        assertNotNull(box);
+        assertEquals("0..1", box.getDestMultiplicity()); //$NON-NLS-1$
+
+        ChangeGroupedDependencyTargetMultiplicityCommand change = new ChangeGroupedDependencyTargetMultiplicityCommand(box, "2..3"); //$NON-NLS-1$
+        assertTrue(change.canExecute());
+        change.execute();
+        assertEquals("2..3", box.getDestMultiplicity()); //$NON-NLS-1$
+        change.undo();
+        assertEquals("0..1", box.getDestMultiplicity()); //$NON-NLS-1$
+        change.redo();
+        assertEquals("2..3", box.getDestMultiplicity()); //$NON-NLS-1$
+
+        // an empty value clears the multiplicity rather than storing null
+        ChangeGroupedDependencyTargetMultiplicityCommand clear = new ChangeGroupedDependencyTargetMultiplicityCommand(box, ""); //$NON-NLS-1$
+        clear.execute();
+        assertEquals("", box.getDestMultiplicity()); //$NON-NLS-1$
+    }
+
+    private static GroupedDependency findBox(GRLGraph graph) {
+        for (Object o : graph.getNodes())
+            if (o instanceof GroupedDependency)
+                return (GroupedDependency) o;
+        return null;
+    }
+
+    private static int countBoxes(GRLGraph graph) {
+        int count = 0;
+        for (Object o : graph.getNodes())
+            if (o instanceof GroupedDependency)
+                count++;
+        return count;
     }
 
     private static final class TestGrlGraphTreeEditPart extends GrlGraphTreeEditPart {

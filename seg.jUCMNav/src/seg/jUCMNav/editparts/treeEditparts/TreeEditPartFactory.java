@@ -5,6 +5,7 @@ import grl.ActorRef;
 import grl.Belief;
 import grl.ElementLink;
 import grl.GRLGraph;
+import grl.GroupedDependency;
 import grl.IntentionalElement;
 import grl.IntentionalElementRef;
 import grl.kpimodel.KPIInformationElement;
@@ -79,6 +80,8 @@ public class TreeEditPartFactory implements EditPartFactory {
             return new ResponsibilityTreeEditPart((Responsibility) model);
         else if (model instanceof GRLGraph)
             return new GrlGraphTreeEditPart((GRLGraph) model);
+        else if (model instanceof GroupedDependency)
+            return new GroupedDependencyTreeEditPart((GroupedDependency) model);
         else if (model instanceof IntentionalElementRef)
             return new IntentionalElementRefTreeEditPart((IntentionalElementRef) model);
         else if (model instanceof IntentionalElement)

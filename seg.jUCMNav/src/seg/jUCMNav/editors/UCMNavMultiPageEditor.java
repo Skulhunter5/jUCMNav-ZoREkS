@@ -777,10 +777,17 @@ public class UCMNavMultiPageEditor extends MultiPageEditorPart implements Adapte
 	/**
 	 * To allow us to programatically set the active page.
 	 * 
+	 * <p>
+	 * The editor's tab list can be out of step with the model's
+	 * {@code specDiagrams} list (tabs are rebuilt lazily when a diagram is added or
+	 * removed, most visibly right after a command creates one). Guard the index the
+	 * same way {@code MultiPageEditorPart.setActivePage} does, and simply do nothing
+	 * when the page does not exist yet instead of tripping its assertion.
+	 * 
 	 * @see org.eclipse.ui.part.MultiPageEditorPart#setActivePage(int)
 	 */
 	protected void setActivePage(int pageIndex) {
-		if (getPageCount() > 0) {
+		if (pageIndex >= 0 && pageIndex < getPageCount()) {
 			super.setActivePage(pageIndex);
 
 			// refresh content depending on current page
@@ -909,10 +916,19 @@ public class UCMNavMultiPageEditor extends MultiPageEditorPart implements Adapte
 	/**
 	 * Change the active page in the editor from the Graph object.
 	 * 
+	 * <p>
+	 * If the diagram is still missing a tab (e.g. an instance model diagram that was
+	 * just generated), rebuild the tabs from the model first so the diagram becomes
+	 * visible instead of being silently ignored by {@link #setActivePage(int)}.
+	 * </p>
+	 * 
 	 * @param diagram
 	 */
 	public void setActivePage(IURNDiagram diagram) {
 		int pageIndex = getModel().getUrndef().getSpecDiagrams().indexOf(diagram);
+		if (pageIndex >= 0 && pageIndex >= getPageCount()) {
+			recreatePages();
+		}
 		setActivePage(pageIndex);
 	}
 

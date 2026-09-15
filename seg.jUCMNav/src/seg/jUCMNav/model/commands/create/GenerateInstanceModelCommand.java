@@ -20,6 +20,8 @@ import grl.Dependency;
 import grl.ElementLink;
 import grl.GRLGraph;
 import grl.GrlFactory;
+import grl.GroupedDependency;
+import grl.GroupedDependencyLink;
 import grl.IntentionalElement;
 import grl.IntentionalElementRef;
 import grl.LinkRef;
@@ -31,6 +33,7 @@ import seg.jUCMNav.Messages;
 import seg.jUCMNav.model.ModelCreationFactory;
 import seg.jUCMNav.model.commands.IGlobalStackCommand;
 import seg.jUCMNav.model.commands.JUCMNavCommand;
+import seg.jUCMNav.model.util.DependencyMultiplicity;
 import seg.jUCMNav.model.util.MetadataHelper;
 import seg.jUCMNav.model.util.URNNamingHelper;
 import seg.jUCMNav.strategies.EvaluationStrategyManager;
@@ -48,8 +51,11 @@ import urncore.IURNDiagram;
  * For every actor of the source graph the user supplies a count; the generated graph contains
  * that many independent copies of the actor and of each of its intentional elements. Each copy
  * is named "i: name" (where {@code i} starts at 1). Links between intentional elements of the
- * same actor are replicated in every copy; links between elements of different actors (GRL
- * dependencies) are not supported yet and are rejected by {@link #analyze(GRLGraph)}.
+ * same actor are replicated in every copy. Links between elements of different actors (GRL
+ * dependencies) instantiate as dependencies from one copy to another: 1:1 dependencies stay
+ * single links, dependencies touching several copies of one side become grouped dependencies (a
+ * box with all source copies on one side and all target copies on the other, sharing one link
+ * definition).
  * </p>
  * 
  * <p>
@@ -88,7 +94,7 @@ public class GenerateInstanceModelCommand extends Command implements JUCMNavComm
     private static final int ACTOR_PADDING = 6;
 
     public enum GenerationProblem {
-        NONE, NESTED_ACTOR, FREE_FLOATING_IE, DEPENDENCY, NO_ACTOR
+        NONE, NESTED_ACTOR, FREE_FLOATING_IE, DEPENDENCY, DEPENDENCY_SOURCE_MULTIPLICITY, NO_ACTOR
     }
 
     private URNspec urn;
@@ -133,7 +139,7 @@ public class GenerateInstanceModelCommand extends Command implements JUCMNavComm
      * 
      * @return {@link GenerationProblem#NONE} if the graph can be instantiated, otherwise the first
      *         problem found. Precedence: nested actors, free-floating intentional elements,
-     *         dependencies (WIP), no actors.
+     *         malformed links, dependencies with a source multiplicity, no actors.
      */
     public static GenerationProblem analyze(GRLGraph graph) {
         if (graph == null)
@@ -158,7 +164,8 @@ public class GenerateInstanceModelCommand extends Command implements JUCMNavComm
                 return GenerationProblem.FREE_FLOATING_IE;
         }
 
-        // Cross-actor links (dependencies) are supported by the model but instantiation is WIP.
+        // Dependencies may cross actors (they become grouped dependencies when a side has more than
+        // one instance); all other links (contributions, decompositions) must be intra-actor.
         for (Object o : graph.getConnections()) {
             if (!(o instanceof LinkRef))
                 continue;
@@ -167,14 +174,24 @@ public class GenerateInstanceModelCommand extends Command implements JUCMNavComm
             IURNNode targetNode = ref.getTarget();
             if (!(sourceNode instanceof IntentionalElementRef) || !(targetNode instanceof IntentionalElementRef))
                 return GenerationProblem.DEPENDENCY;
-            if (((IntentionalElementRef) sourceNode).getContRef() != ((IntentionalElementRef) targetNode).getContRef())
-                return GenerationProblem.DEPENDENCY;
+            if (!(ref.getLink() instanceof Dependency)) {
+                if (((IntentionalElementRef) sourceNode).getContRef() != ((IntentionalElementRef) targetNode).getContRef())
+                    return GenerationProblem.DEPENDENCY;
+            } else if (hasText(((Dependency) ref.getLink()).getSrcMultiplicity())) {
+                // a source-side multiplicity has no instance-model meaning: the adjusted target
+                // multiplicity already conveys how many targets the dependency links to
+                return GenerationProblem.DEPENDENCY_SOURCE_MULTIPLICITY;
+            }
         }
 
         if (contRefs.isEmpty())
             return GenerationProblem.NO_ACTOR;
 
         return GenerationProblem.NONE;
+    }
+
+    private static boolean hasText(String value) {
+        return value != null && value.trim().length() > 0;
     }
 
     /**
@@ -442,7 +459,7 @@ public class GenerateInstanceModelCommand extends Command implements JUCMNavComm
                 continue;
             IntentionalElementRef sourceEnd = (IntentionalElementRef) sourceRef.getSource();
             IntentionalElementRef targetEnd = (IntentionalElementRef) sourceRef.getTarget();
-            if (sourceEnd.getContRef() != targetEnd.getContRef())
+            if (sourceEnd.getContRef() != targetEnd.getContRef() && !(sourceRef.getLink() instanceof Dependency))
                 continue;
 
             List<IntentionalElement> sourceCopies = intElementCopies.get(sourceEnd);
@@ -450,7 +467,15 @@ public class GenerateInstanceModelCommand extends Command implements JUCMNavComm
             List<IntentionalElementRef> sourceRefCopies = refCopies.get(sourceEnd);
             List<IntentionalElementRef> targetRefCopies = refCopies.get(targetEnd);
             if (sourceCopies == null || targetCopies == null || sourceRefCopies == null || targetRefCopies == null
-                    || sourceCopies.size() != targetCopies.size() || sourceRefCopies.size() != targetRefCopies.size())
+                    || sourceRefCopies.isEmpty() || targetRefCopies.isEmpty())
+                continue;
+
+            if (sourceRef.getLink() instanceof Dependency) {
+                buildDependencyLink(sourceRef, sourceCopies, targetCopies, sourceRefCopies, targetRefCopies);
+                continue;
+            }
+
+            if (sourceCopies.size() != targetCopies.size() || sourceRefCopies.size() != targetRefCopies.size())
                 continue;
             int copyCount = sourceCopies.size();
 
@@ -475,6 +500,105 @@ public class GenerateInstanceModelCommand extends Command implements JUCMNavComm
                 }
                 graph.getConnections().add(linkRef);
             }
+        }
+    }
+
+    /**
+     * Replicates a type-model dependency. When one side has exactly one instance (N == 1 and M == 1)
+     * the dependency stays a plain directed link with the adjusted target multiplicity; otherwise it
+     * becomes a grouped dependency: a single box, one shared {@link GroupedDependencyLink} definition
+     * for all the fan links, N links from the source instances to the box and M links from the box to
+     * the target instances. The adjusted target multiplicity lives on the box.
+     */
+    private void buildDependencyLink(LinkRef sourceRef, List<IntentionalElement> sourceCopies,
+            List<IntentionalElement> targetCopies, List<IntentionalElementRef> sourceRefCopies,
+            List<IntentionalElementRef> targetRefCopies) {
+        Dependency sourceDep = (Dependency) sourceRef.getLink();
+        int n = sourceRefCopies.size();
+        int m = targetRefCopies.size();
+        String destMultiplicity = adjustedDestMultiplicity(sourceDep.getDestMultiplicity(), m);
+
+        if (n == 1 && m == 1) {
+            Dependency dep = (Dependency) copyElementLink(sourceDep);
+            urn.getGrlspec().getLinks().add(dep);
+            createdLinks.add(dep);
+            dep.setDestMultiplicity(destMultiplicity);
+            sourceCopies.get(0).getLinksSrc().add(dep);
+            targetCopies.get(0).getLinksDest().add(dep);
+            graph.getConnections().add(createLinkRef(dep, sourceRefCopies.get(0), targetRefCopies.get(0)));
+            return;
+        }
+
+        GroupedDependencyLink dep = GrlFactory.eINSTANCE.createGroupedDependencyLink();
+        dep.setId(""); //$NON-NLS-1$
+        URNNamingHelper.setElementNameAndID(urn, dep);
+        urn.getGrlspec().getLinks().add(dep);
+        createdLinks.add(dep);
+
+        GroupedDependency box = (GroupedDependency) GrlFactory.eINSTANCE.createGroupedDependency();
+        box.setName(dep.getName());
+        URNNamingHelper.setElementNameAndID(urn, box);
+        box.setDestMultiplicity(destMultiplicity);
+
+        // place the box half-way between the source and target instance groups
+        int sx = 0, sy = 0;
+        for (int i = 0; i < n; i++) {
+            IntentionalElementRef ref = sourceRefCopies.get(i);
+            sx += ref.getX();
+            sy += ref.getY();
+            ref.getDef().getLinksSrc().add(dep);
+            graph.getConnections().add(createLinkRef(dep, ref, box));
+        }
+        int tx = 0, ty = 0;
+        for (int j = 0; j < m; j++) {
+            IntentionalElementRef ref = targetRefCopies.get(j);
+            tx += ref.getX();
+            ty += ref.getY();
+            ref.getDef().getLinksDest().add(dep);
+            graph.getConnections().add(createLinkRef(dep, box, ref));
+        }
+        box.setX(((sx / n) + (tx / m)) / 2);
+        box.setY(((sy / n) + (ty / m)) / 2);
+        graph.getNodes().add(box);
+    }
+
+    private LinkRef createLinkRef(ElementLink link, urncore.IURNNode source, urncore.IURNNode target) {
+        LinkRef linkRef = (LinkRef) GrlFactory.eINSTANCE.createLinkRef();
+        linkRef.setLink(link);
+        linkRef.setSource(source);
+        linkRef.setTarget(target);
+        return linkRef;
+    }
+
+    /**
+     * Applies the target-multiplicity adjustment to an instance model: the target end can never be
+     * used by more than the number of target instances generated (Nt = M). The lower bound becomes
+     * 0 when unbounded, the upper bound becomes M when unbounded or larger than M.
+     */
+    private static String adjustedDestMultiplicity(String raw, int targetCount) {
+        int lower = 0;
+        int upper = targetCount;
+        if (raw != null && raw.trim().length() > 0 && DependencyMultiplicity.isValid(raw)) {
+            String s = DependencyMultiplicity.normalizeStored(raw);
+            int separator = s.indexOf(".."); //$NON-NLS-1$
+            if (separator > 0) {
+                int parsedLower = parseMultiplicityBound(s.substring(0, separator));
+                int parsedUpper = parseMultiplicityBound(s.substring(separator + 2));
+                if (parsedLower >= 0)
+                    lower = parsedLower;
+                if (parsedUpper >= 0 && parsedUpper < upper)
+                    upper = parsedUpper;
+            }
+        }
+        return lower + ".." + upper; //$NON-NLS-1$
+    }
+
+    private static int parseMultiplicityBound(String bound) {
+        try {
+            int value = Integer.parseInt(bound.trim());
+            return value >= 0 ? value : -1;
+        } catch (NumberFormatException e) {
+            return -1;
         }
     }
 

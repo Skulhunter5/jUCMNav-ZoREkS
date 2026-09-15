@@ -2083,6 +2083,15 @@ public interface GrlPackage extends EPackage {
     int DEPENDENCY_FEATURE_COUNT = ELEMENT_LINK_FEATURE_COUNT + 2;
 
     /**
+	 * The number of structural features of the '<em>Grouped Dependency Link</em>' class.
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+    int GROUPED_DEPENDENCY_LINK_FEATURE_COUNT = ELEMENT_LINK_FEATURE_COUNT + 0;
+
+    /**
 	 * The meta object id for the '{@link grl.impl.EvaluationImpl <em>Evaluation</em>}' class.
 	 * <!-- begin-user-doc -->
      * <!-- end-user-doc -->
@@ -3310,6 +3319,150 @@ public interface GrlPackage extends EPackage {
 	 */
 	int REUSED_STRATEGY_FEATURE_COUNT = EVALUATION_STRATEGY_FEATURE_COUNT + 2;
 
+    /**
+	 * The feature id for the '<em><b>Name</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+    int GROUPED_DEPENDENCY__NAME = GRL_NODE__NAME;
+
+    /**
+	 * The feature id for the '<em><b>From Links</b></em>' reference list.
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+    int GROUPED_DEPENDENCY__FROM_LINKS = GRL_NODE__FROM_LINKS;
+
+    /**
+	 * The feature id for the '<em><b>To Links</b></em>' reference list.
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+    int GROUPED_DEPENDENCY__TO_LINKS = GRL_NODE__TO_LINKS;
+
+    /**
+	 * The feature id for the '<em><b>Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+    int GROUPED_DEPENDENCY__ID = GRL_NODE__ID;
+
+    /**
+	 * The feature id for the '<em><b>Description</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+    int GROUPED_DEPENDENCY__DESCRIPTION = GRL_NODE__DESCRIPTION;
+
+    /**
+	 * The feature id for the '<em><b>Metadata</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int GROUPED_DEPENDENCY__METADATA = GRL_NODE__METADATA;
+
+    /**
+	 * The feature id for the '<em><b>Inconcern</b></em>' reference list.
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+    int GROUPED_DEPENDENCY__INCONCERN = GRL_NODE__INCONCERN;
+
+    /**
+	 * The feature id for the '<em><b>X</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+    int GROUPED_DEPENDENCY__X = GRL_NODE__X;
+
+    /**
+	 * The feature id for the '<em><b>Y</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+    int GROUPED_DEPENDENCY__Y = GRL_NODE__Y;
+
+    /**
+	 * The feature id for the '<em><b>Diagram</b></em>' container reference.
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+    int GROUPED_DEPENDENCY__DIAGRAM = GRL_NODE__DIAGRAM;
+
+    /**
+	 * The feature id for the '<em><b>Cont Ref</b></em>' reference.
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+    int GROUPED_DEPENDENCY__CONT_REF = GRL_NODE__CONT_REF;
+
+    /**
+	 * The feature id for the '<em><b>Succ</b></em>' reference list.
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+    int GROUPED_DEPENDENCY__SUCC = GRL_NODE__SUCC;
+
+    /**
+	 * The feature id for the '<em><b>Pred</b></em>' reference list.
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+    int GROUPED_DEPENDENCY__PRED = GRL_NODE__PRED;
+
+    /**
+	 * The feature id for the '<em><b>Label</b></em>' containment reference.
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+    int GROUPED_DEPENDENCY__LABEL = GRL_NODE__LABEL;
+
+    /**
+	 * The feature id for the '<em><b>Dest Multiplicity</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+    int GROUPED_DEPENDENCY__DEST_MULTIPLICITY = GRL_NODE_FEATURE_COUNT + 0;
+
+    /**
+	 * The number of structural features of the '<em>Grouped Dependency</em>' class.
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+    int GROUPED_DEPENDENCY_FEATURE_COUNT = GRL_NODE_FEATURE_COUNT + 1;
+
 				/**
 	 * The meta object id for the '{@link grl.Criticality <em>Criticality</em>}' enum.
 	 * <!-- begin-user-doc -->
@@ -3392,6 +3545,26 @@ public interface GrlPackage extends EPackage {
 	 * @generated
 	 */
 	int STRATEGY_TYPE = 34;
+
+    /**
+	 * The meta object id for the '{@link grl.impl.GroupedDependencyImpl <em>Grouped Dependency</em>}' class.
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @see grl.impl.GroupedDependencyImpl
+	 * @see grl.impl.GrlPackageImpl#getGroupedDependency()
+	 * @generated
+	 */
+	int GROUPED_DEPENDENCY = 35;
+
+    /**
+	 * The meta object id for the '{@link grl.impl.GroupedDependencyLinkImpl <em>Grouped Dependency Link</em>}' class.
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @see grl.impl.GroupedDependencyLinkImpl
+	 * @see grl.impl.GrlPackageImpl#getGroupedDependencyLink()
+	 * @generated
+	 */
+	int GROUPED_DEPENDENCY_LINK = 36;
 
 
 				/**
@@ -4247,6 +4420,37 @@ public interface GrlPackage extends EPackage {
 	 * @generated
 	 */
     EClass getGRLNode();
+
+    /**
+	 * Returns the meta object for class '{@link grl.GroupedDependency <em>Grouped Dependency</em>}'.
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Grouped Dependency</em>'.
+	 * @see grl.GroupedDependency
+	 * @generated
+	 */
+    EClass getGroupedDependency();
+
+    /**
+	 * Returns the meta object for class '{@link grl.GroupedDependencyLink <em>Grouped Dependency Link</em>}'.
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Grouped Dependency Link</em>'.
+	 * @see grl.GroupedDependencyLink
+	 * @generated
+	 */
+    EClass getGroupedDependencyLink();
+
+    /**
+	 * Returns the meta object for the attribute '{@link grl.GroupedDependency#getDestMultiplicity <em>Dest Multiplicity</em>}'.
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Dest Multiplicity</em>'.
+	 * @see grl.GroupedDependency#getDestMultiplicity()
+	 * @see #getGroupedDependency()
+	 * @generated
+	 */
+    EAttribute getGroupedDependency_DestMultiplicity();
 
     /**
 	 * Returns the meta object for class '{@link grl.LinkRefBendpoint <em>Link Ref Bendpoint</em>}'.
@@ -5303,6 +5507,16 @@ public interface GrlPackage extends EPackage {
 		EClass DEPENDENCY = eINSTANCE.getDependency();
 
         /**
+		 * The meta object literal for the '{@link grl.impl.GroupedDependencyLinkImpl <em>Grouped Dependency Link</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see grl.impl.GroupedDependencyLinkImpl
+		 * @see grl.impl.GrlPackageImpl#getGroupedDependencyLink()
+		 * @generated
+		 */
+		EClass GROUPED_DEPENDENCY_LINK = eINSTANCE.getGroupedDependencyLink();
+
+        /**
 		 * The meta object literal for the '<em><b>Src Multiplicity</b></em>' attribute feature.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -5859,6 +6073,24 @@ public interface GrlPackage extends EPackage {
 		 * @generated
 		 */
 		EReference REUSED_STRATEGY__REUSE_LINK_IN_FM = eINSTANCE.getReusedStrategy_ReuseLinkInFM();
+
+								/**
+		 * The meta object literal for the '{@link grl.impl.GroupedDependencyImpl <em>Grouped Dependency</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see grl.impl.GroupedDependencyImpl
+		 * @see grl.impl.GrlPackageImpl#getGroupedDependency()
+		 * @generated
+		 */
+		EClass GROUPED_DEPENDENCY = eINSTANCE.getGroupedDependency();
+
+								/**
+		 * The meta object literal for the '<em><b>Dest Multiplicity</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute GROUPED_DEPENDENCY__DEST_MULTIPLICITY = eINSTANCE.getGroupedDependency_DestMultiplicity();
 
 								/**
 		 * The meta object literal for the '{@link grl.Criticality <em>Criticality</em>}' enum.

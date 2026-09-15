@@ -3,14 +3,17 @@
  */
 package seg.jUCMNav.editpolicies.layout;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.gef.EditPart;
+import org.eclipse.gef.EditPolicy;
 import org.eclipse.gef.Request;
 import org.eclipse.gef.commands.Command;
+import org.eclipse.gef.editpolicies.NonResizableEditPolicy;
 import org.eclipse.gef.requests.CreateRequest;
 
 import grl.ActorRef;
@@ -21,6 +24,7 @@ import grl.IntentionalElementRef;
 import grl.kpimodel.Indicator;
 import grl.kpimodel.KPIInformationElementRef;
 import seg.jUCMNav.editparts.GrlNodeEditPart;
+import seg.jUCMNav.editparts.GroupedDependencyEditPart;
 import seg.jUCMNav.model.commands.changeConstraints.SetConstraintBoundContainerRefCompoundCommand;
 import seg.jUCMNav.model.commands.changeConstraints.SetConstraintGrlNodeCommand;
 import seg.jUCMNav.model.commands.create.AddBeliefCommand;
@@ -42,10 +46,28 @@ import urncore.Label;
 /**
  * XYLayoutEditPolicy for the GrlGraphEditPart. Handles creation of new elements and moving/resizing of existing ones.
  * 
- * @author Jean-François Roy, pchen
+ * @author Jean-Franï¿½ois Roy, pchen
  * 
  */
 public class GrlGraphXYLayoutEditPolicy extends AbstractDiagramXYLayoutEditPolicy {
+
+    /**
+     * The grouped-dependency box has a fixed size, so instead of the default resizable selection
+     * policy (which would draw resize handles that do nothing) give it a non-resizable policy that
+     * still answers move requests but draws no handles at all.
+     * 
+     * @see org.eclipse.gef.editpolicies.LayoutEditPolicy#createChildEditPolicy(org.eclipse.gef.EditPart)
+     */
+    protected EditPolicy createChildEditPolicy(EditPart child) {
+        if (child instanceof GroupedDependencyEditPart) {
+            return new NonResizableEditPolicy() {
+                protected List createSelectionHandles() {
+                    return new ArrayList(0);
+                }
+            };
+        }
+        return super.createChildEditPolicy(child);
+    }
 
     /**
      * Returns a command to be executed when the palette tries to create something

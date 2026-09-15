@@ -4,6 +4,7 @@ import grl.ActorRef;
 import grl.Belief;
 import grl.BeliefLink;
 import grl.GRLGraph;
+import grl.GroupedDependency;
 import grl.IntentionalElementRef;
 import grl.LinkRef;
 import grl.kpimodel.KPIInformationElementRef;
@@ -19,7 +20,7 @@ import urncore.Label;
 /**
  * Edit Part factory for the GRL model elements.
  * 
- * @author Jean-François Roy, pchen
+ * @author Jean-Franï¿½ois Roy, pchen
  * 
  */
 public class GrlGraphicalEditPartFactory implements EditPartFactory {
@@ -49,6 +50,8 @@ public class GrlGraphicalEditPartFactory implements EditPartFactory {
             return new KPIInformationElementEditPart((KPIInformationElementRef) model);
         } else if (model instanceof Belief) {
             return new BeliefEditPart((Belief) model);
+        } else if (model instanceof GroupedDependency) {
+            return new GroupedDependencyEditPart((GroupedDependency) model);
         } else if (model instanceof ActorRef) {
             return new ActorRefEditPart((ActorRef) model);
         } 

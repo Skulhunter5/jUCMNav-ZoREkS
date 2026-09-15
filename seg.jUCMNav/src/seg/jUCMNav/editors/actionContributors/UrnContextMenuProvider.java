@@ -38,6 +38,8 @@ import seg.jUCMNav.actions.ChangeColorAction;
 import seg.jUCMNav.actions.ChangeComponentTypeAction;
 import seg.jUCMNav.actions.ChangeCorrelationAction;
 import seg.jUCMNav.actions.ChangeDependencyMultiplicityAction;
+import seg.jUCMNav.actions.ChangeGroupedDependencyTargetMultiplicityAction;
+import seg.jUCMNav.actions.SetGroupedDependencyOrientationOverrideAction;
 import seg.jUCMNav.actions.ChangeDecompositionTypeAction;
 import seg.jUCMNav.actions.ChangeLinkMandatoryAction;
 import seg.jUCMNav.actions.ChangeImpactAnalysisAction;
@@ -415,6 +417,23 @@ public class UrnContextMenuProvider extends ContextMenuProvider {
         action = getActionRegistry().getAction(ChangeDependencyMultiplicityAction.SET_TARGET_MULTIPLICITY);
         if (action.isEnabled())
             manager.appendToGroup(GEFActionConstants.GROUP_REST, action);
+
+        action = getActionRegistry().getAction(ChangeGroupedDependencyTargetMultiplicityAction.SET_TARGET_MULTIPLICITY);
+        if (action.isEnabled())
+            manager.appendToGroup(GEFActionConstants.GROUP_REST, action);
+
+        IAction[] orientationActions = new IAction[5];
+        orientationActions[0] = getActionRegistry().getAction(SetGroupedDependencyOrientationOverrideAction.SET_ORIENTATION_UP);
+        orientationActions[1] = getActionRegistry().getAction(SetGroupedDependencyOrientationOverrideAction.SET_ORIENTATION_DOWN);
+        orientationActions[2] = getActionRegistry().getAction(SetGroupedDependencyOrientationOverrideAction.SET_ORIENTATION_LEFT);
+        orientationActions[3] = getActionRegistry().getAction(SetGroupedDependencyOrientationOverrideAction.SET_ORIENTATION_RIGHT);
+        orientationActions[4] = getActionRegistry().getAction(SetGroupedDependencyOrientationOverrideAction.CLEAR_ORIENTATION);
+        SubmenuAction orientationSubmenu = new SubmenuAction(
+                orientationActions,
+                Messages.getString("UrnContextMenuProvider.orientationOverride"), Messages.getString("UrnContextMenuProvider.orientationOverride"),
+                JUCMNavPlugin.getImageDescriptor("icons/Aggregate1.gif"), true); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+        if (orientationSubmenu.getActiveOperationCount() > 0)
+            manager.appendToGroup(GEFActionConstants.GROUP_REST, orientationSubmenu);
 
         action = getActionRegistry().getAction(EditEvaluationRangeAction.EDITEVALUATIONRANGEACTION);
         if (action.isEnabled())
