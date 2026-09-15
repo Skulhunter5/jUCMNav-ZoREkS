@@ -35,13 +35,12 @@ import org.eclipse.gef.RequestConstants;
 import org.eclipse.gef.editparts.AbstractConnectionEditPart;
 import org.eclipse.gef.requests.SelectionRequest;
 import org.eclipse.jface.dialogs.IDialogConstants;
-import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.PlatformUI;
 //import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.views.properties.IPropertySource;
 
 import seg.jUCMNav.JUCMNavPlugin;
-import seg.jUCMNav.actions.ChangeGroupedDependencyTargetMultiplicityAction;
+import seg.jUCMNav.Messages;
 import seg.jUCMNav.editparts.dynamicContextTreeEditparts.DynamicContextsUtils;
 import seg.jUCMNav.editpolicies.element.LinkRefBendpointEditPolicy;
 import seg.jUCMNav.editpolicies.element.LinkRefComponentEditPolicy;
@@ -51,7 +50,6 @@ import seg.jUCMNav.figures.LinkRefConnection;
 import seg.jUCMNav.figures.util.UrnMetadata;
 //import seg.jUCMNav.model.ModelCreationFactory;
 import seg.jUCMNav.model.commands.transformations.ChangeDependencyMultiplicityCommand;
-import seg.jUCMNav.model.commands.transformations.ChangeGroupedDependencyTargetMultiplicityCommand;
 import seg.jUCMNav.model.util.DependencyMultiplicity;
 import seg.jUCMNav.model.util.MetadataHelper;
 import seg.jUCMNav.strategies.EvaluationStrategyManager;
@@ -257,10 +255,13 @@ public class LinkRefEditPart extends AbstractConnectionEditPart {
         Dependency depend = (Dependency) getLinkRef().getLink();
         String current = end == ChangeDependencyMultiplicityCommand.TARGET ? depend.getDestMultiplicity()
                 : depend.getSrcMultiplicity();
+        boolean target = end == ChangeDependencyMultiplicityCommand.TARGET;
+        String title = Messages.getString(target ? "MultiplicityDialog.titleTarget" : "MultiplicityDialog.titleSource"); //$NON-NLS-1$ //$NON-NLS-2$
+        String label = Messages.getString(target ? "MultiplicityDialog.labelTarget" : "MultiplicityDialog.labelSource"); //$NON-NLS-1$ //$NON-NLS-2$
 
         MultiplicityDialog dialog = new MultiplicityDialog(
                 PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(),
-                DependencyMultiplicity.normalizeStored(current));
+                DependencyMultiplicity.normalizeStored(current), title, label);
         if (dialog.open() == IDialogConstants.OK_ID) {
             getViewer().getEditDomain().getCommandStack()
                     .execute(new ChangeDependencyMultiplicityCommand(depend, end, dialog.getValue()));
@@ -271,6 +272,8 @@ public class LinkRefEditPart extends AbstractConnectionEditPart {
      * A double-click on a multiplicity label opens the multiplicity dialog for that end. Figure
      * mouse listeners never fire for connection decorations (GEF routes double-clicks to the edit
      * part), so the label bounds are hit-tested here, in the same coordinate space as the request.
+     * Grouped dependencies are edited exclusively through their box; their fan connections are not
+     * double-click targets.
      *
      * @see org.eclipse.gef.EditPart#performRequest(org.eclipse.gef.Request)
      */
@@ -288,23 +291,8 @@ public class LinkRefEditPart extends AbstractConnectionEditPart {
                     return;
                 }
             }
-            if (getLinkRef().getLink() instanceof GroupedDependencyLink && !ReusedElementUtil.isReuseLink(getLinkRef().getLink())) {
-                GroupedDependency box = ChangeGroupedDependencyTargetMultiplicityAction.findGroupedDependency(getLinkRef());
-                if (box != null) {
-                    openGroupedDependencyDialog(box);
-                    return;
-                }
-            }
         }
         super.performRequest(request);
-    }
-
-    private void openGroupedDependencyDialog(GroupedDependency box) {
-        Shell shell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
-        MultiplicityDialog dialog = new MultiplicityDialog(shell, DependencyMultiplicity.normalizeStored(box.getDestMultiplicity()));
-        if (dialog.open() == IDialogConstants.OK_ID)
-            getViewer().getEditDomain().getCommandStack()
-                    .execute(new ChangeGroupedDependencyTargetMultiplicityCommand(box, dialog.getValue()));
     }
     
     public Connection getConnectionFigure() {

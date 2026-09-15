@@ -24,6 +24,7 @@ import org.eclipse.ui.PlatformUI;
 
 import grl.GroupedDependency;
 import grl.LinkRef;
+import seg.jUCMNav.Messages;
 import seg.jUCMNav.editpolicies.element.GRLNodeComponentEditPolicy;
 import seg.jUCMNav.editpolicies.feedback.GrlNodeFeedbackEditPolicy;
 import seg.jUCMNav.figures.GroupedDependencyFigure;
@@ -157,7 +158,9 @@ public class GroupedDependencyEditPart extends GrlNodeEditPart implements NodeEd
     private void openMultiplicityDialog() {
         String current = getNode().getDestMultiplicity();
         Shell shell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
-        MultiplicityDialog dialog = new MultiplicityDialog(shell, DependencyMultiplicity.normalizeStored(current));
+        MultiplicityDialog dialog = new MultiplicityDialog(shell, DependencyMultiplicity.normalizeStored(current),
+                Messages.getString("MultiplicityDialog.titleTarget"), //$NON-NLS-1$
+                Messages.getString("MultiplicityDialog.labelTarget")); //$NON-NLS-1$
         if (dialog.open() == IDialogConstants.OK_ID) {
             ChangeGroupedDependencyTargetMultiplicityCommand command = new ChangeGroupedDependencyTargetMultiplicityCommand(
                     getNode(), dialog.getValue());
@@ -382,15 +385,28 @@ public class GroupedDependencyEditPart extends GrlNodeEditPart implements NodeEd
             }
         }
 
-        int targetX = 0, targetY = 0, targetCount = 0;
-        for (Iterator it = getNode().getSucc().iterator(); it.hasNext();) {
-            IURNConnection connection = (IURNConnection) it.next();
-            if (connection instanceof LinkRef) {
-                IURNNode dest = connection.getTarget();
-                if (dest != null) {
-                    targetX += dest.getX();
-                    targetY += dest.getY();
-                    targetCount++;
+        int targetX, targetY, targetCount;
+        if (DependencyMultiplicity.isUnsatisfiable(getNode().getDestMultiplicity())) {
+            // Impossible box: its target fan links are drawn invisible, so base the direction on
+            // the hidden targets and it would flip arbitrarily in the empty space the user sees.
+            // Orient from the visible sources only: the target side faces away from the sources
+            // (toward the box's own other side), which is the only visible geometry to honor.
+            targetX = getNode().getX();
+            targetY = getNode().getY();
+            targetCount = 1;
+        } else {
+            targetX = 0;
+            targetY = 0;
+            targetCount = 0;
+            for (Iterator it = getNode().getSucc().iterator(); it.hasNext();) {
+                IURNConnection connection = (IURNConnection) it.next();
+                if (connection instanceof LinkRef) {
+                    IURNNode dest = connection.getTarget();
+                    if (dest != null) {
+                        targetX += dest.getX();
+                        targetY += dest.getY();
+                        targetCount++;
+                    }
                 }
             }
         }

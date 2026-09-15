@@ -10,6 +10,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.PlatformUI;
 
+import seg.jUCMNav.Messages;
 import seg.jUCMNav.editparts.LinkRefEditPart;
 import seg.jUCMNav.model.commands.transformations.ChangeDependencyMultiplicityCommand;
 import seg.jUCMNav.model.util.DependencyMultiplicity;
@@ -66,8 +67,11 @@ public class ChangeDependencyMultiplicityAction extends URNSelectionAction {
         String current = whichEnd == ChangeDependencyMultiplicityCommand.TARGET ? dependency.getDestMultiplicity()
                 : dependency.getSrcMultiplicity();
 
+        boolean target = whichEnd == ChangeDependencyMultiplicityCommand.TARGET;
         Shell shell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
-        MultiplicityDialog dialog = new MultiplicityDialog(shell, DependencyMultiplicity.normalizeStored(current));
+        MultiplicityDialog dialog = new MultiplicityDialog(shell, DependencyMultiplicity.normalizeStored(current),
+                Messages.getString(target ? "MultiplicityDialog.titleTarget" : "MultiplicityDialog.titleSource"), //$NON-NLS-1$ //$NON-NLS-2$
+                Messages.getString(target ? "MultiplicityDialog.labelTarget" : "MultiplicityDialog.labelSource")); //$NON-NLS-1$ //$NON-NLS-2$
         if (dialog.open() == IDialogConstants.OK_ID)
             execute(new ChangeDependencyMultiplicityCommand(dependency, whichEnd, dialog.getValue()));
     }

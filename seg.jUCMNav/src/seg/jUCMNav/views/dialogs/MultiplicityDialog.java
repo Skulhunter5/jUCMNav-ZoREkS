@@ -26,16 +26,37 @@ public class MultiplicityDialog extends Dialog {
     private Text text;
     private String result;
     private String initialValue;
+    private String title;
+    private String labelText;
 
+    /**
+     * Convenience constructor: generic window title and field label.
+     */
     public MultiplicityDialog(Shell parentShell, String initialValue) {
+        this(parentShell, initialValue, Messages.getString("MultiplicityDialog.title"), //$NON-NLS-1$
+                Messages.getString("MultiplicityDialog.multiplicity")); //$NON-NLS-1$
+    }
+
+    /**
+     * @param parentShell
+     * @param initialValue
+     *            the current value, pre-normalized for display
+     * @param title
+     *            window title, naming the multiplicity being edited (e.g. "Target Multiplicity")
+     * @param labelText
+     *            field label shown next to the input, naming the multiplicity being edited
+     */
+    public MultiplicityDialog(Shell parentShell, String initialValue, String title, String labelText) {
         super(parentShell);
         this.result = "";
         this.initialValue = initialValue == null ? "" : initialValue;
+        this.title = title;
+        this.labelText = labelText;
     }
 
     protected void configureShell(Shell newShell) {
         super.configureShell(newShell);
-        newShell.setText(Messages.getString("MultiplicityDialog.title")); //$NON-NLS-1$
+        newShell.setText(title);
     }
 
     /**
@@ -51,7 +72,7 @@ public class MultiplicityDialog extends Dialog {
         composite.setLayout(layout);
 
         Label label = new Label(composite, SWT.NONE);
-        label.setText(Messages.getString("MultiplicityDialog.multiplicity")); //$NON-NLS-1$
+        label.setText(labelText);
 
         text = new Text(composite, SWT.BORDER | SWT.SINGLE);
         text.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
@@ -80,7 +101,7 @@ public class MultiplicityDialog extends Dialog {
             result = input.length() == 0 ? "" : DependencyMultiplicity.normalizeStored(input);
             super.okPressed();
         } else {
-            MessageDialog.openError(getShell(), Messages.getString("MultiplicityDialog.title"), //$NON-NLS-1$
+            MessageDialog.openError(getShell(), title, //$NON-NLS-1$
                     Messages.getString("MultiplicityDialog.invalid")); //$NON-NLS-1$
         }
     }

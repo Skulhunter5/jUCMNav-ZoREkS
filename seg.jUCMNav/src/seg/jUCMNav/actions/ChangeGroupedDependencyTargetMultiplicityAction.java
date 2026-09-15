@@ -11,6 +11,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.PlatformUI;
 
+import seg.jUCMNav.Messages;
 import seg.jUCMNav.editparts.GroupedDependencyEditPart;
 import seg.jUCMNav.editparts.LinkRefEditPart;
 import seg.jUCMNav.model.commands.transformations.ChangeGroupedDependencyTargetMultiplicityCommand;
@@ -88,7 +89,9 @@ public class ChangeGroupedDependencyTargetMultiplicityAction extends URNSelectio
 
     public void run() {
         Shell shell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
-        MultiplicityDialog dialog = new MultiplicityDialog(shell, DependencyMultiplicity.normalizeStored(box.getDestMultiplicity()));
+        MultiplicityDialog dialog = new MultiplicityDialog(shell, DependencyMultiplicity.normalizeStored(box.getDestMultiplicity()),
+                Messages.getString("MultiplicityDialog.titleTarget"), //$NON-NLS-1$
+                Messages.getString("MultiplicityDialog.labelTarget")); //$NON-NLS-1$
         if (dialog.open() == IDialogConstants.OK_ID)
             execute(new ChangeGroupedDependencyTargetMultiplicityCommand(box, dialog.getValue()));
     }
