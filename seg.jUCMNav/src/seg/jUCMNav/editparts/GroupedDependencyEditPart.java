@@ -13,6 +13,7 @@ import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.gef.ConnectionEditPart;
+import org.eclipse.gef.EditPart;
 import org.eclipse.gef.EditPolicy;
 import org.eclipse.gef.NodeEditPart;
 import org.eclipse.gef.Request;
@@ -47,6 +48,7 @@ public class GroupedDependencyEditPart extends GrlNodeEditPart implements NodeEd
     private boolean syncingFarEndAdapters;
     private final Set metadataAdapters = new HashSet();
     private boolean syncingMetadataAdapters;
+    private boolean wasImpossible;
 
     /**
      * @param model
@@ -325,9 +327,30 @@ public class GroupedDependencyEditPart extends GrlNodeEditPart implements NodeEd
         getFigure().setBounds(bounds);
         getFigure().setLocation(location);
 
+        boolean impossible = DependencyMultiplicity.isUnsatisfiable(node.getDestMultiplicity());
+        getNodeFigure().setImpossible(impossible);
+        if (impossible != wasImpossible) {
+            // the fan connections decide their own visibility from the box; nudge them so a switch
+            // between impossible (X, hidden target fans) and satisfiable (D, visible fans) is
+            // reflected right away instead of only at their creation.
+            wasImpossible = impossible;
+            refreshFanLinkVisibility();
+        }
+
         updateTargetOrientation();
 
         getFigure().validate();
+    }
+
+    /**
+     * Re-runs {@link EditPart#refresh()} on every fan connection of the box so each one re-reads
+     * whether its figure is hidden (the box-to-target fans of an impossible box are not drawn).
+     */
+    private void refreshFanLinkVisibility() {
+        for (Iterator it = getSourceConnections().iterator(); it.hasNext();)
+            ((EditPart) it.next()).refresh();
+        for (Iterator it = getTargetConnections().iterator(); it.hasNext();)
+            ((EditPart) it.next()).refresh();
     }
 
     /**

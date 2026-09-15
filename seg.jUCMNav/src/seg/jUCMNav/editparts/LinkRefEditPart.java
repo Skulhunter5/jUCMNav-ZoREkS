@@ -312,6 +312,19 @@ public class LinkRefEditPart extends AbstractConnectionEditPart {
     }
 
     /**
+     * Hides the figure of a box-to-target fan when the box is an impossible grouped dependency: the
+     * connection still exists in the model (automatic orientation needs the target positions), but
+     * drawing it would just be clutter. Source-to-box fans always stay visible; the group's
+     * impossibility is read live from the box's stored ({@code x..y}, {@code x > y}) multiplicity.
+     */
+    private void refreshImpossibleFanVisibility() {
+        boolean hidden = getLinkRef().getSource() instanceof GroupedDependency
+                && DependencyMultiplicity.isUnsatisfiable(
+                        ((GroupedDependency) getLinkRef().getSource()).getDestMultiplicity());
+        getConnectionFigure().setVisible(!hidden);
+    }
+
+    /**
      * Updates a dependency multiplicity label: shows the text only when present.
      */
     private void setMultiplicityLabel(Label label, String text) {
@@ -480,6 +493,7 @@ public class LinkRefEditPart extends AbstractConnectionEditPart {
             setMultiplicityLabel(tgtMultLabel, DependencyMultiplicity.toDisplay(depend.getDestMultiplicity()));
         } else if (getLinkRef().getLink() instanceof GroupedDependencyLink) {
             getLinkRefFigure().setType(LinkRefConnection.TYPE_GROUPED_DEPENDENCY);
+            refreshImpossibleFanVisibility();
         }
         
         //If TimedGRL algorithm selected and design view is active, then add change label if required

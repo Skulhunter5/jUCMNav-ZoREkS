@@ -509,6 +509,15 @@ public class GenerateInstanceModelCommand extends Command implements JUCMNavComm
      * becomes a grouped dependency: a single box, one shared {@link GroupedDependencyLink} definition
      * for all the fan links, N links from the source instances to the box and M links from the box to
      * the target instances. The adjusted target multiplicity lives on the box.
+     * 
+     * <p>
+     * An adjustment that cannot be satisfied (the requirement exceeds the number of target copies,
+     * {@code x..y} with {@code x > y}) is mirrored as an <em>impossible</em> grouped dependency:
+     * the whole construct is then always grouped — even for a single instance on each side, since a
+     * plain link has no box on which to draw the "X" — and every fan link is still created, so
+     * automatic orientation keeps working. The diagram simply does not draw the box-to-target fans
+     * of an impossible box (they would be clutter); the box itself renders an "X" instead of a "D".
+     * </p>
      */
     private void buildDependencyLink(LinkRef sourceRef, List<IntentionalElement> sourceCopies,
             List<IntentionalElement> targetCopies, List<IntentionalElementRef> sourceRefCopies,
@@ -517,8 +526,9 @@ public class GenerateInstanceModelCommand extends Command implements JUCMNavComm
         int n = sourceRefCopies.size();
         int m = targetRefCopies.size();
         String destMultiplicity = adjustedDestMultiplicity(sourceDep.getDestMultiplicity(), m);
+        boolean unsatisfiable = DependencyMultiplicity.isUnsatisfiable(destMultiplicity);
 
-        if (n == 1 && m == 1) {
+        if (n == 1 && m == 1 && !unsatisfiable) {
             Dependency dep = (Dependency) copyElementLink(sourceDep);
             urn.getGrlspec().getLinks().add(dep);
             createdLinks.add(dep);
@@ -573,7 +583,10 @@ public class GenerateInstanceModelCommand extends Command implements JUCMNavComm
     /**
      * Applies the target-multiplicity adjustment to an instance model: the target end can never be
      * used by more than the number of target instances generated (Nt = M). The lower bound becomes
-     * 0 when unbounded, the upper bound becomes M when unbounded or larger than M.
+     * 0 when unbounded, the upper bound becomes M when unbounded or larger than M. The lower bound
+     * is deliberately not clamped: when it still exceeds M the result ({@code x..y} with
+     * {@code x > y}) means a dependency that cannot be satisfied, which the diagram renders as an
+     * impossible grouped dependency.
      */
     private static String adjustedDestMultiplicity(String raw, int targetCount) {
         int lower = 0;

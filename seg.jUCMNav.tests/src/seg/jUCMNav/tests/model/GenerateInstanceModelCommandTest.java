@@ -52,6 +52,7 @@ import seg.jUCMNav.model.commands.create.GenerateInstanceModelCommand;
 import seg.jUCMNav.model.commands.create.GenerateInstanceModelCommand.GenerationProblem;
 import seg.jUCMNav.model.commands.delete.DeleteGRLNodeCommand;
 import seg.jUCMNav.model.commands.transformations.ChangeGroupedDependencyTargetMultiplicityCommand;
+import seg.jUCMNav.model.util.DependencyMultiplicity;
 import seg.jUCMNav.strategies.util.ReusedElementUtil;
 import urn.URNspec;
 import urn.UrnFactory;
@@ -754,6 +755,65 @@ public class GenerateInstanceModelCommandTest {
         GroupedDependency box = findBox(graph);
         assertNotNull(box);
         assertEquals("2..3", box.getDestMultiplicity()); //$NON-NLS-1$
+    }
+
+    @Test
+    public void unsatisfiableGroupedDependencyIsImpossibleButKeepsAllFans() {
+        GRLGraph source = newGraph("TypeModel");
+        ActorRef actorA = addActor(source, "A", 100, 100);
+        ActorRef actorB = addActor(source, "B", 300, 300);
+        IntentionalElementRef aie = addIE(source, actorA, "Goal", IntentionalElementType.GOAL_LITERAL, 30, 40);
+        IntentionalElementRef bie = addIE(source, actorB, "Task", IntentionalElementType.TASK_LITERAL, 30, 40);
+        Dependency dep = GrlFactory.eINSTANCE.createDependency();
+        dep.setDestMultiplicity("4..4"); //$NON-NLS-1$
+        connect(source, aie, bie, dep);
+
+        Map<ActorRef, Integer> counts = new LinkedHashMap<ActorRef, Integer>();
+        counts.put(actorA, Integer.valueOf(2));
+        counts.put(actorB, Integer.valueOf(3));
+        GenerateInstanceModelCommand command = new GenerateInstanceModelCommand(urn, source, counts, 20);
+        command.execute();
+
+        GRLGraph graph = command.getDiagram();
+        // requirement 4 exceeds the 3 target copies: the stored multiplicity becomes x..y with x > y
+        GroupedDependency box = findBox(graph);
+        assertNotNull(box);
+        assertEquals("4..3", box.getDestMultiplicity()); //$NON-NLS-1$
+        assertTrue(DependencyMultiplicity.isUnsatisfiable(box.getDestMultiplicity()));
+
+        // every fan link still exists in the model: only the drawing hides the box-to-target fans
+        assertEquals(5, graph.getConnections().size()); // 2 source fans + 3 target fans
+        for (Object o : graph.getConnections())
+            assertTrue(((LinkRef) o).getLink() instanceof GroupedDependencyLink);
+    }
+
+    @Test
+    public void impossiblePlainDependencyIsUpgradedToGroupedBox() {
+        GRLGraph source = newGraph("TypeModel");
+        ActorRef actorA = addActor(source, "A", 100, 100);
+        ActorRef actorB = addActor(source, "B", 300, 300);
+        IntentionalElementRef aie = addIE(source, actorA, "Goal", IntentionalElementType.GOAL_LITERAL, 30, 40);
+        IntentionalElementRef bie = addIE(source, actorB, "Task", IntentionalElementType.TASK_LITERAL, 30, 40);
+        Dependency dep = GrlFactory.eINSTANCE.createDependency();
+        dep.setDestMultiplicity("3..5"); //$NON-NLS-1$
+        connect(source, aie, bie, dep);
+
+        Map<ActorRef, Integer> counts = new LinkedHashMap<ActorRef, Integer>();
+        counts.put(actorA, Integer.valueOf(1));
+        counts.put(actorB, Integer.valueOf(1));
+        GenerateInstanceModelCommand command = new GenerateInstanceModelCommand(urn, source, counts, 20);
+        command.execute();
+
+        GRLGraph graph = command.getDiagram();
+        // a single-instance copy of an impossible dependency cannot be a plain link (no box to draw
+        // the "X" on), so it becomes a grouped dependency like every other impossible one
+        GroupedDependency box = findBox(graph);
+        assertNotNull(box);
+        assertEquals("3..1", box.getDestMultiplicity()); //$NON-NLS-1$
+        assertTrue(DependencyMultiplicity.isUnsatisfiable(box.getDestMultiplicity()));
+        assertEquals(2, graph.getConnections().size()); // one visible source fan + one hidden target fan
+        for (Object o : graph.getConnections())
+            assertTrue(((LinkRef) o).getLink() instanceof GroupedDependencyLink);
     }
 
     @Test

@@ -92,6 +92,25 @@ public class DependencyMultiplicityTest {
         assertTrue(DependencyMultiplicity.isValid("*..*"));
     }
 
+    @Test
+    public void unsatisfiableMultiplicitiesAreDetected() {
+        assertTrue(DependencyMultiplicity.isUnsatisfiable("3..2"));
+        assertTrue(DependencyMultiplicity.isUnsatisfiable("[3..2]"));
+        assertTrue(DependencyMultiplicity.isUnsatisfiable(" 3 .. 2 "));
+        assertTrue(DependencyMultiplicity.isUnsatisfiable("4..3"));
+        assertFalse(DependencyMultiplicity.isUnsatisfiable("2..3"));
+        assertFalse(DependencyMultiplicity.isUnsatisfiable("2..2"));
+        assertFalse(DependencyMultiplicity.isUnsatisfiable("0..5"));
+        // an unbounded or malformed value is never "impossible": only a concrete lower bound
+        // above a concrete upper bound is unsatisfiable
+        assertFalse(DependencyMultiplicity.isUnsatisfiable("3..*"));
+        assertFalse(DependencyMultiplicity.isUnsatisfiable("*..3"));
+        assertFalse(DependencyMultiplicity.isUnsatisfiable("*..*"));
+        assertFalse(DependencyMultiplicity.isUnsatisfiable(""));
+        assertFalse(DependencyMultiplicity.isUnsatisfiable(null));
+        assertFalse(DependencyMultiplicity.isUnsatisfiable("garbage"));
+    }
+
     // ---------------------------------------------------------------- formatting
 
     @Test

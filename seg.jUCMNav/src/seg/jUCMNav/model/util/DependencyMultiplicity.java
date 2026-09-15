@@ -49,6 +49,32 @@ public final class DependencyMultiplicity {
         return lower == UNBOUNDED || upper == UNBOUNDED || lower.intValue() <= upper.intValue();
     }
 
+    /**
+     * @return {@code true} if {@code value} denotes a multiplicity whose lower bound exceeds its
+     *         upper bound ({@code x..y} with {@code x > y}): a requirement on more satisfied
+     *         targets than there are targets in total. Only instance-model generation can produce
+     *         such a value (clamping the upper bound to the copy count); the diagram renders these
+     *         as impossible grouped dependencies (an "X" box).
+     */
+    public static boolean isUnsatisfiable(String value) {
+        if (value == null)
+            return false;
+        String s = normalize(value);
+        if (s.length() == 0)
+            return false;
+
+        int separator = s.indexOf(".."); //$NON-NLS-1$
+        if (separator <= 0 || separator + 2 >= s.length())
+            return false;
+        if (s.indexOf("..", separator + 2) >= 0) //$NON-NLS-1$
+            return false;
+
+        Integer lower = parseBound(s.substring(0, separator));
+        Integer upper = parseBound(s.substring(separator + 2));
+        return lower != null && upper != null && lower != UNBOUNDED && upper != UNBOUNDED
+                && lower.intValue() > upper.intValue();
+    }
+
     /** Sentinel for an unbounded ({@code *}) bound, never a valid non-negative integer. */
     private static final Integer UNBOUNDED = Integer.valueOf(-1);
 

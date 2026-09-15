@@ -52,6 +52,7 @@ public class GroupedDependencyFigure extends Shape {
     }
 
     private int targetSide = SIDE_RIGHT;
+    private boolean impossible;
 
     private ConnectionAnchor sideAnchor;
     private ConnectionAnchor sourceAnchor;
@@ -153,6 +154,18 @@ public class GroupedDependencyFigure extends Shape {
     }
 
     /**
+     * Marks the box as impossible (its target-multiplicity requirement exceeds the number of
+     * targets): from then on the glyph drawn inside is an "X" instead of a "D". Orientation keeps
+     * working normally, so the box still turns with it; only the glyph changes.
+     */
+    public void setImpossible(boolean impossible) {
+        if (this.impossible == impossible)
+            return;
+        this.impossible = impossible;
+        repaint();
+    }
+
+    /**
      * Announces that every connection anchor of this figure moved, forcing the attached fan
      * connections to re-route against the current target side.
      */
@@ -178,7 +191,10 @@ public class GroupedDependencyFigure extends Shape {
         r.height -= getLineWidth();
         graphics.drawRectangle(r);
 
-        drawD(graphics);
+        if (impossible)
+            drawX(graphics);
+        else
+            drawD(graphics);
     }
 
     /*
@@ -193,6 +209,23 @@ public class GroupedDependencyFigure extends Shape {
         r.width -= getLineWidth();
         r.height -= getLineWidth();
         graphics.fillRectangle(r);
+    }
+
+    /**
+     * Draws the glyph of an impossible grouped dependency: an "X" centered in the box, spanning the
+     * same radius as the D's arc so the two glyphs read the same size. The cross is deliberately
+     * rotation invariant: the box still turns with the orientation, but the mark itself never points
+     * anywhere.
+     */
+    private void drawX(Graphics graphics) {
+        Rectangle r = getBounds().getCopy();
+        int cx = r.x + r.width / 2;
+        int cy = r.y + r.height / 2;
+        int radius = Math.min(MAX_D_RADIUS, Math.min(r.width, r.height) / 2 - 4);
+        if (radius < 4)
+            radius = 4;
+        graphics.drawLine(cx - radius, cy - radius, cx + radius, cy + radius);
+        graphics.drawLine(cx + radius, cy - radius, cx - radius, cy + radius);
     }
 
     /**
