@@ -269,13 +269,24 @@ public class GroupedDependencyEditPart extends GrlNodeEditPart implements NodeEd
      * about an override-to-override switch. Registering as an adapter on the definition's metadata children,
      * recomputed whenever that list changes, closes the gap; the refresh in
      * {@link #notifyChanged(Notification)} then re-runs {@link #updateTargetOrientation()}.
+     * <p>
+     * Adding or clearing an override (automatic <-> manual) adds or removes the {@link Metadata}
+     * element instead of touching its value, which fires on the <em>definition</em> itself; the edit
+     * part is therefore also an adapter on {@link GroupedDependency}, so those list
+     * add/removes reach {@link #notifyChanged(Notification)} too and re-run
+     * {@link #updateTargetOrientation()} right away.
      */
     private void syncMetadataAdapters() {
         if (syncingMetadataAdapters)
             return;
         syncingMetadataAdapters = true;
         try {
-            Set desired = new HashSet(getDef().getMetadata());
+            GroupedDependency def = getDef();
+            if (def != null && !def.eAdapters().contains(this))
+                def.eAdapters().add(this);
+            Set desired = new HashSet();
+            if (def != null)
+                desired.addAll(def.getMetadata());
             if (desired.equals(metadataAdapters))
                 return;
             for (Iterator it = new ArrayList(metadataAdapters).iterator(); it.hasNext();) {
@@ -299,6 +310,9 @@ public class GroupedDependencyEditPart extends GrlNodeEditPart implements NodeEd
             return;
         syncingMetadataAdapters = true;
         try {
+            GroupedDependency def = getDef();
+            if (def != null && def.eAdapters().contains(this))
+                def.eAdapters().remove(this);
             for (Iterator it = new ArrayList(metadataAdapters).iterator(); it.hasNext();) {
                 Metadata metadata = (Metadata) it.next();
                 metadata.eAdapters().remove(this);
