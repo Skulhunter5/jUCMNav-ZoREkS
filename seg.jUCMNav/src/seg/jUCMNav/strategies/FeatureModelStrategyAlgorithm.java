@@ -251,14 +251,14 @@ public class FeatureModelStrategyAlgorithm extends FormulaBasedGRLStrategyAlgori
 	}
     
     public IntentionalElement nextNode() {
-        if (ReusedElementUtil.isReusedElement(strategy.getGrlspec(), evalReady.firstElement())) {
+        if (ReusedElementUtil.isReusedElement(strategy.getGrlspec(), (IntentionalElement) evalReady.firstElement())) {
         	IntentionalElement intElem = (IntentionalElement) evalReady.remove(0);
         	for (IntentionalElement reusingElement : ReusedElementUtil.getReusingElements(strategy.getGrlspec(), intElem)) {
-	        	addToEvalReadyIfCovered(reusingElement);
+        		addToEvalReadyIfCovered(reusingElement);
         	}
         	return intElem;
         } else {
-        	return super.nextNode();
+        	return (IntentionalElement) super.nextNode();
         }
     }
 

@@ -8,8 +8,7 @@ import grl.DecompositionType;
 import grl.Dependency;
 import grl.ElementLink;
 import grl.GrlPackage;
-import grl.GroupedDependency;
-import grl.GroupedDependencyLink;
+import grl.GroupedDependencyRef;
 import grl.IntentionalElement;
 import grl.LinkRef;
 import grl.LinkRefBendpoint;
@@ -249,7 +248,8 @@ public class LinkRefEditPart extends AbstractConnectionEditPart {
      * change command on the viewer's command stack.
      */
     private void openMultiplicityDialog(int end) {
-        if (!(getLinkRef().getLink() instanceof Dependency) || ReusedElementUtil.isReuseLink(getLinkRef().getLink()))
+        if (!(getLinkRef().getLink() instanceof Dependency) || isGroupedFan(getLinkRef())
+                || ReusedElementUtil.isReuseLink(getLinkRef().getLink()))
             return;
 
         Dependency depend = (Dependency) getLinkRef().getLink();
@@ -281,7 +281,8 @@ public class LinkRefEditPart extends AbstractConnectionEditPart {
     public void performRequest(Request request) {
         if (RequestConstants.REQ_OPEN.equals(request.getType()) && request instanceof SelectionRequest) {
             Point location = ((SelectionRequest) request).getLocation().getCopy();
-            if (getLinkRef().getLink() instanceof Dependency && !ReusedElementUtil.isReuseLink(getLinkRef().getLink())) {
+            if (getLinkRef().getLink() instanceof Dependency && !isGroupedFan(getLinkRef())
+                    && !ReusedElementUtil.isReuseLink(getLinkRef().getLink())) {
                 if (srcMultLabel.isVisible() && srcMultLabel.getBounds().contains(location)) {
                     openMultiplicityDialog(ChangeDependencyMultiplicityCommand.SOURCE);
                     return;
@@ -300,15 +301,24 @@ public class LinkRefEditPart extends AbstractConnectionEditPart {
     }
 
     /**
+     * @return true when the given link reference is one of a grouped dependency's fan connections:
+     *         a connection touching the box (a {@link GroupedDependencyRef}).
+     */
+    private boolean isGroupedFan(LinkRef connection) {
+        return connection.getSource() instanceof GroupedDependencyRef || connection.getTarget() instanceof GroupedDependencyRef;
+    }
+
+    /**
      * Hides the figure of a box-to-target fan when the box is an impossible grouped dependency: the
      * connection still exists in the model (automatic orientation needs the target positions), but
      * drawing it would just be clutter. Source-to-box fans always stay visible; the group's
-     * impossibility is read live from the box's stored ({@code x..y}, {@code x > y}) multiplicity.
+     * impossibility is read live from the box definition's stored ({@code x..y}, {@code x > y})
+     * multiplicity.
      */
     private void refreshImpossibleFanVisibility() {
-        boolean hidden = getLinkRef().getSource() instanceof GroupedDependency
+        boolean hidden = getLinkRef().getSource() instanceof GroupedDependencyRef
                 && DependencyMultiplicity.isUnsatisfiable(
-                        ((GroupedDependency) getLinkRef().getSource()).getDestMultiplicity());
+                        ((GroupedDependencyRef) getLinkRef().getSource()).getDef().getDestMultiplicity());
         getConnectionFigure().setVisible(!hidden);
     }
 
@@ -474,14 +484,14 @@ public class LinkRefEditPart extends AbstractConnectionEditPart {
                     stereotypeLabel.setVisible(true);
                 }
             }
+        } else if (isGroupedFan(getLinkRef())) {
+            getLinkRefFigure().setType(LinkRefConnection.TYPE_GROUPED_DEPENDENCY);
+            refreshImpossibleFanVisibility();
         } else if (getLinkRef().getLink() instanceof Dependency) {
             Dependency depend = (Dependency) getLinkRef().getLink();
             getLinkRefFigure().setType(LinkRefConnection.TYPE_DEPENDENCY);
             setMultiplicityLabel(srcMultLabel, DependencyMultiplicity.toDisplay(depend.getSrcMultiplicity()));
             setMultiplicityLabel(tgtMultLabel, DependencyMultiplicity.toDisplay(depend.getDestMultiplicity()));
-        } else if (getLinkRef().getLink() instanceof GroupedDependencyLink) {
-            getLinkRefFigure().setType(LinkRefConnection.TYPE_GROUPED_DEPENDENCY);
-            refreshImpossibleFanVisibility();
         }
         
         //If TimedGRL algorithm selected and design view is active, then add change label if required
@@ -513,8 +523,15 @@ public class LinkRefEditPart extends AbstractConnectionEditPart {
 	        			if (deactStatus.equalsIgnoreCase("true"))
 	        				ignored = true;
 	        		}
-	        		if( EvaluationStrategyManager.getInstance().isIgnored( (IntentionalElement) getLinkRef().getLink().getDest() )
-	        				|| EvaluationStrategyManager.getInstance().isIgnored( (IntentionalElement) getLinkRef().getLink().getSrc()) 
+	        		// A grouped dependency fan touches the box on one end (a GroupedDependency,
+	        		// which is a GRLLinkableElement and not an IntentionalElement); check each end
+	        		// only when it really is an intentional element.
+	        		Object linkDest = link.getDest();
+	        		Object linkSrc = link.getSrc();
+	        		if( (linkDest instanceof IntentionalElement && EvaluationStrategyManager.getInstance()
+	        				.isIgnored( (IntentionalElement) linkDest ) )
+	        				|| (linkSrc instanceof IntentionalElement && EvaluationStrategyManager.getInstance()
+	        				.isIgnored( (IntentionalElement) linkSrc ) ) 
 	        				|| ignored == true) {
 	        			// The decomposition-type label is now owned by the parent goal node.
 	        			//decompLabel.setForegroundColor(ColorManager.GRAY);

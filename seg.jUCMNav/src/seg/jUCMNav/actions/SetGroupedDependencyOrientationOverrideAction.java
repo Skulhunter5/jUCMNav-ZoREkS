@@ -5,7 +5,7 @@ import java.util.Iterator;
 import org.eclipse.ui.IWorkbenchPart;
 
 import grl.GroupedDependency;
-import grl.GroupedDependencyLink;
+import grl.GroupedDependencyRef;
 import grl.LinkRef;
 import seg.jUCMNav.Messages;
 import seg.jUCMNav.editparts.GroupedDependencyEditPart;
@@ -25,7 +25,7 @@ import seg.jUCMNav.strategies.util.ReusedElementUtil;
  * 
  * <p>
  * The whole construct is the grouped dependency: each action is enabled on a single D box or on a
- * single fan link (a {@link LinkRef} whose definition is a {@link GroupedDependencyLink}).
+ * single fan link (a {@link LinkRef} connecting the box, a {@link GroupedDependencyRef}).
  * </p>
  * 
  * @author skuly
@@ -79,7 +79,7 @@ public class SetGroupedDependencyOrientationOverrideAction extends URNSelectionA
         for (Iterator iter = getSelectedObjects().iterator(); iter.hasNext();) {
             Object obj = iter.next();
             if (obj instanceof GroupedDependencyEditPart) {
-                box = (GroupedDependency) ((GroupedDependencyEditPart) obj).getModel();
+                box = ((GroupedDependencyRef) ((GroupedDependencyEditPart) obj).getModel()).getDef();
             } else if (obj instanceof LinkRefEditPart) {
                 LinkRef linkRef = ((LinkRefEditPart) obj).getLinkRef();
                 if (ReusedElementUtil.isReuseLink(linkRef.getLink()))

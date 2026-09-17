@@ -31,6 +31,9 @@
         eType="#//kpimodel/KPIConversion" containment="true" eOpposite="#//kpimodel/KPIConversion/grlspec"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="featureModel" eType="ecore:EClass fm.ecore#//FeatureModel"
         containment="true" eOpposite="fm.ecore#//FeatureModel/grlspec"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="groupedDependencies"
+        upperBound="-1" eType="#//GroupedDependency" containment="true"
+        eOpposite="#//GroupedDependency/grlspec"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="Belief" eSuperTypes="#//GRLNode">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="author" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -282,10 +285,17 @@
     <eStructuralFeatures xsi:type="ecore:EReference" name="reuseLinkInFM" lowerBound="1"
         eType="ecore:EClass fm.ecore#//ReuseLink"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="GroupedDependency" eSuperTypes="#//GRLNode">
+  <eClassifiers xsi:type="ecore:EClass" name="GroupedDependency" eSuperTypes="#//GRLLinkableElement">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="destMultiplicity" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="grlspec" lowerBound="1"
+        eType="#//GRLspec" transient="true" eOpposite="#//GRLspec/groupedDependencies"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="refs" upperBound="-1"
+        eType="#//GroupedDependencyRef" eOpposite="#//GroupedDependencyRef/def"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="GroupedDependencyLink" eSuperTypes="#//ElementLink"/>
+  <eClassifiers xsi:type="ecore:EClass" name="GroupedDependencyRef" eSuperTypes="#//GRLNode">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="def" lowerBound="1"
+        eType="#//GroupedDependency" eOpposite="#//GroupedDependency/refs"/>
+  </eClassifiers>
   <eSubpackages name="kpimodel" nsURI="http:///grl/kpimodel.ecore" nsPrefix="grl.kpimodel">
     <eClassifiers xsi:type="ecore:EClass" name="IndicatorGroup" eSuperTypes="urncore.ecore#//GRLmodelElement">
       <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">

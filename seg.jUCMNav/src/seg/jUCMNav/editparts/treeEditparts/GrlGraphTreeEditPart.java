@@ -3,6 +3,7 @@ package seg.jUCMNav.editparts.treeEditparts;
 import fm.FeatureDiagram;
 import grl.GRLGraph;
 import grl.GRLNode;
+import grl.GroupedDependencyRef;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -50,11 +51,16 @@ public class GrlGraphTreeEditPart extends UrnModelElementTreeEditPart {
     public List<GRLNode> getModelChildren() {
         ArrayList<GRLNode> list = new ArrayList<GRLNode>();
         GRLGraph graph = getGraph();
+        // contRefs are actor (and container) references, which have their own tree edit parts;
+        // keep them raw, like the original code did.
         list.addAll(graph.getContRefs());
         Vector<GRLNode> v = new Vector<GRLNode>();
         for (Iterator iter = graph.getNodes().iterator(); iter.hasNext();) {
             GRLNode element = (GRLNode) iter.next();
-            v.add(element);
+            // Hide the grouped-dependency box (GroupedDependencyRef) from the outline: it is not a real
+            // graph node but a box at the dependency level, and the tree has no edit part for it.
+            if (!(element instanceof GroupedDependencyRef))
+                v.add(element);
         }
         list.addAll(v);
 

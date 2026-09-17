@@ -13,6 +13,8 @@ public class UrnEditDomain extends DefaultEditDomain implements Disposable {
 
     protected Vector viewers = new Vector();
 
+    private boolean disposed = false;
+
     public UrnEditDomain(IEditorPart editorPart) {
         super(editorPart);
     }
@@ -30,6 +32,14 @@ public class UrnEditDomain extends DefaultEditDomain implements Disposable {
     }
 
     public void dispose() {
+        // A viewer keeps its edit-domain reference after the first dispose (see
+        // configureOutlineViewerDetails + UrnOutlinePage.dispose, which both call
+        // this). On a second dispose, the command stack field is already null and
+        // AbstractTool.deactivate() NPEs on getCommandStack(); bail out instead.
+        if (disposed)
+            return;
+        disposed = true;
+
         setPaletteRoot(null);
         setPaletteViewer(null);
         setEditorPart(null);

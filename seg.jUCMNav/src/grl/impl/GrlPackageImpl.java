@@ -37,7 +37,7 @@ import grl.GRLspec;
 import grl.GrlFactory;
 import grl.GrlPackage;
 import grl.GroupedDependency;
-import grl.GroupedDependencyLink;
+import grl.GroupedDependencyRef;
 import grl.ImpactModel;
 import grl.ImportanceType;
 import grl.IntentionalElement;
@@ -197,7 +197,7 @@ public class GrlPackageImpl extends EPackageImpl implements GrlPackage {
      * <!-- end-user-doc -->
 	 * @generated
 	 */
-    private EClass groupedDependencyLinkEClass = null;
+    private EClass groupedDependencyRefEClass = null;
 
     /**
 	 * <!-- begin-user-doc -->
@@ -578,6 +578,15 @@ public class GrlPackageImpl extends EPackageImpl implements GrlPackage {
 	 */
 	public EReference getGRLspec_FeatureModel() {
 		return (EReference)grLspecEClass.getEStructuralFeatures().get(13);
+	}
+
+				/**
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public EReference getGRLspec_GroupedDependencies() {
+		return (EReference)grLspecEClass.getEStructuralFeatures().get(14);
 	}
 
 				/**
@@ -1170,8 +1179,8 @@ public class GrlPackageImpl extends EPackageImpl implements GrlPackage {
      * <!-- end-user-doc -->
 	 * @generated
 	 */
-    public EClass getGroupedDependencyLink() {
-		return groupedDependencyLinkEClass;
+    public EClass getGroupedDependencyRef() {
+		return groupedDependencyRefEClass;
 	}
 
     /**
@@ -1181,6 +1190,33 @@ public class GrlPackageImpl extends EPackageImpl implements GrlPackage {
 	 */
     public EAttribute getGroupedDependency_DestMultiplicity() {
 		return (EAttribute)groupedDependencyEClass.getEStructuralFeatures().get(0);
+	}
+
+    /**
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @generated
+	 */
+    public EReference getGroupedDependency_Grlspec() {
+		return (EReference)groupedDependencyEClass.getEStructuralFeatures().get(1);
+	}
+
+    /**
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @generated
+	 */
+    public EReference getGroupedDependency_Refs() {
+		return (EReference)groupedDependencyEClass.getEStructuralFeatures().get(2);
+	}
+
+    /**
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @generated
+	 */
+    public EReference getGroupedDependencyRef_Def() {
+		return (EReference)groupedDependencyRefEClass.getEStructuralFeatures().get(0);
 	}
 
     /**
@@ -1694,6 +1730,7 @@ public class GrlPackageImpl extends EPackageImpl implements GrlPackage {
 		createEReference(grLspecEClass, GR_LSPEC__INDICATOR_GROUP);
 		createEReference(grLspecEClass, GR_LSPEC__KPI_CONVERSION);
 		createEReference(grLspecEClass, GR_LSPEC__FEATURE_MODEL);
+		createEReference(grLspecEClass, GR_LSPEC__GROUPED_DEPENDENCIES);
 
 		beliefEClass = createEClass(BELIEF);
 		createEAttribute(beliefEClass, BELIEF__AUTHOR);
@@ -1831,8 +1868,11 @@ public class GrlPackageImpl extends EPackageImpl implements GrlPackage {
 
 		groupedDependencyEClass = createEClass(GROUPED_DEPENDENCY);
 		createEAttribute(groupedDependencyEClass, GROUPED_DEPENDENCY__DEST_MULTIPLICITY);
+		createEReference(groupedDependencyEClass, GROUPED_DEPENDENCY__GRLSPEC);
+		createEReference(groupedDependencyEClass, GROUPED_DEPENDENCY__REFS);
 
-		groupedDependencyLinkEClass = createEClass(GROUPED_DEPENDENCY_LINK);
+		groupedDependencyRefEClass = createEClass(GROUPED_DEPENDENCY_REF);
+		createEReference(groupedDependencyRefEClass, GROUPED_DEPENDENCY_REF__DEF);
 
 		// Create enums
 		criticalityEEnum = createEEnum(CRITICALITY);
@@ -1896,8 +1936,8 @@ public class GrlPackageImpl extends EPackageImpl implements GrlPackage {
 		evaluationStrategyEClass.getESuperTypes().add(theUrncorePackage.getGRLmodelElement());
 		grlNodeEClass.getESuperTypes().add(theUrncorePackage.getGRLmodelElement());
 		grlNodeEClass.getESuperTypes().add(theUrncorePackage.getIURNNode());
-		groupedDependencyEClass.getESuperTypes().add(this.getGRLNode());
-		groupedDependencyLinkEClass.getESuperTypes().add(this.getElementLink());
+		groupedDependencyEClass.getESuperTypes().add(this.getGRLLinkableElement());
+		groupedDependencyRefEClass.getESuperTypes().add(this.getGRLNode());
 		beliefLinkEClass.getESuperTypes().add(theUrncorePackage.getIURNConnection());
 		strategiesGroupEClass.getESuperTypes().add(theUrncorePackage.getGRLmodelElement());
 		contributionContextGroupEClass.getESuperTypes().add(theUrncorePackage.getGRLmodelElement());
@@ -1922,6 +1962,7 @@ public class GrlPackageImpl extends EPackageImpl implements GrlPackage {
 		initEReference(getGRLspec_IndicatorGroup(), theKpimodelPackage.getIndicatorGroup(), theKpimodelPackage.getIndicatorGroup_Grlspec(), "indicatorGroup", null, 0, -1, GRLspec.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getGRLspec_KPIConversion(), theKpimodelPackage.getKPIConversion(), theKpimodelPackage.getKPIConversion_Grlspec(), "KPIConversion", null, 0, -1, GRLspec.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getGRLspec_FeatureModel(), theFmPackage.getFeatureModel(), theFmPackage.getFeatureModel_Grlspec(), "featureModel", null, 0, 1, GRLspec.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getGRLspec_GroupedDependencies(), this.getGroupedDependency(), this.getGroupedDependency_Grlspec(), "groupedDependencies", null, 0, -1, GRLspec.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(beliefEClass, Belief.class, "Belief", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getBelief_Author(), ecorePackage.getEString(), "author", null, 0, 1, Belief.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -2059,8 +2100,11 @@ public class GrlPackageImpl extends EPackageImpl implements GrlPackage {
 
 		initEClass(groupedDependencyEClass, GroupedDependency.class, "GroupedDependency", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getGroupedDependency_DestMultiplicity(), ecorePackage.getEString(), "destMultiplicity", null, 0, 1, GroupedDependency.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getGroupedDependency_Grlspec(), this.getGRLspec(), this.getGRLspec_GroupedDependencies(), "grlspec", null, 1, 1, GroupedDependency.class, IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getGroupedDependency_Refs(), this.getGroupedDependencyRef(), this.getGroupedDependencyRef_Def(), "refs", null, 0, -1, GroupedDependency.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
-		initEClass(groupedDependencyLinkEClass, GroupedDependencyLink.class, "GroupedDependencyLink", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEClass(groupedDependencyRefEClass, GroupedDependencyRef.class, "GroupedDependencyRef", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEReference(getGroupedDependencyRef_Def(), this.getGroupedDependency(), this.getGroupedDependency_Refs(), "def", null, 1, 1, GroupedDependencyRef.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		// Initialize enums and add enum literals
 		initEEnum(criticalityEEnum, Criticality.class, "Criticality");

@@ -4,7 +4,7 @@ import grl.ActorRef;
 import grl.Belief;
 import grl.BeliefLink;
 import grl.GRLGraph;
-import grl.GroupedDependency;
+import grl.GroupedDependencyRef;
 import grl.IntentionalElementRef;
 import grl.LinkRef;
 import grl.kpimodel.KPIInformationElementRef;
@@ -50,8 +50,8 @@ public class GrlGraphicalEditPartFactory implements EditPartFactory {
             return new KPIInformationElementEditPart((KPIInformationElementRef) model);
         } else if (model instanceof Belief) {
             return new BeliefEditPart((Belief) model);
-        } else if (model instanceof GroupedDependency) {
-            return new GroupedDependencyEditPart((GroupedDependency) model);
+        } else if (model instanceof GroupedDependencyRef) {
+            return new GroupedDependencyEditPart((GroupedDependencyRef) model);
         } else if (model instanceof ActorRef) {
             return new ActorRefEditPart((ActorRef) model);
         } 

@@ -123,8 +123,8 @@ public class GrlAdapterFactory extends AdapterFactoryImpl {
 			public Object caseGroupedDependency(GroupedDependency object) {
 				return createGroupedDependencyAdapter();
 			}
-			public Object caseGroupedDependencyLink(GroupedDependencyLink object) {
-				return createGroupedDependencyLinkAdapter();
+			public Object caseGroupedDependencyRef(GroupedDependencyRef object) {
+				return createGroupedDependencyRefAdapter();
 			}
 			public Object caseLinkRefBendpoint(LinkRefBendpoint object) {
 				return createLinkRefBendpointAdapter();
@@ -429,16 +429,16 @@ public class GrlAdapterFactory extends AdapterFactoryImpl {
 	}
 
     /**
-	 * Creates a new adapter for an object of class '{@link grl.GroupedDependencyLink <em>Grouped Dependency Link</em>}'.
+	 * Creates a new adapter for an object of class '{@link grl.GroupedDependencyRef <em>Grouped Dependency Ref</em>}'.
 	 * <!-- begin-user-doc -->
      * This default implementation returns null so that we can easily ignore cases;
      * it's useful to ignore a case when inheritance will catch all the cases anyway.
      * <!-- end-user-doc -->
 	 * @return the new adapter.
-	 * @see grl.GroupedDependencyLink
+	 * @see grl.GroupedDependencyRef
 	 * @generated NOT
 	 */
-    public Adapter createGroupedDependencyLinkAdapter() {
+    public Adapter createGroupedDependencyRefAdapter() {
 		return null;
 	}
 

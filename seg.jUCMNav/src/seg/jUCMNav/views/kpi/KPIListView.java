@@ -24,6 +24,7 @@ import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.ui.IActionBars;
 import org.eclipse.ui.IPartListener2;
 import org.eclipse.ui.IWorkbenchPartReference;
@@ -121,7 +122,13 @@ public class KPIListView extends ViewPart implements IPartListener2, ISelectionC
 
         if (viewer.getContextMenu() != null) {
             viewer.getContextMenu().dispose();
-            viewer.setContextMenu(null);
+            // GEF 3.25's setContextMenu(null) re-attaches a rebuilt popup menu to the live
+            // control and NPEs on the nulled manager field (AbstractEditPartViewer.java:668);
+            // only clear the field through the API when the viewer has no control to hang it on.
+            Control control = viewer.getControl();
+            if (control == null || control.isDisposed()) {
+                viewer.setContextMenu(null);
+            }
         }
 
         if (viewer.getEditDomain() instanceof UrnEditDomain) {

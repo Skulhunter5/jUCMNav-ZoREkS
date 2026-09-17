@@ -4,6 +4,8 @@ import grl.Actor;
 import grl.ActorRef;
 import grl.GRLNode;
 import grl.GRLspec;
+import grl.GroupedDependency;
+import grl.GroupedDependencyRef;
 import grl.IntentionalElement;
 import grl.IntentionalElementRef;
 import grl.kpimodel.KPIConversion;
@@ -182,6 +184,9 @@ public class RemoveURNmodelElementCommand extends Command implements JUCMNavComm
             } else if (node instanceof KPIInformationElementRef) {
                 KPIInformationElementRef ref = (KPIInformationElementRef) node;
                 definition = ref.getDef();
+            } else if (node instanceof GroupedDependencyRef) {
+                GroupedDependencyRef ref = (GroupedDependencyRef) node;
+                definition = ref.getDef();
             }
 
         } else if (element instanceof IURNContainerRef) {
@@ -288,6 +293,9 @@ public class RemoveURNmodelElementCommand extends Command implements JUCMNavComm
             } else if (node instanceof KPIInformationElementRef) {
                 KPIInformationElementRef ref = (KPIInformationElementRef) node;
                 ref.setDef(null);
+            } else if (node instanceof GroupedDependencyRef) {
+                GroupedDependencyRef ref = (GroupedDependencyRef) node;
+                ref.setDef(null);
             }
 
         } else if (element instanceof IURNContainerRef) {
@@ -349,6 +357,9 @@ public class RemoveURNmodelElementCommand extends Command implements JUCMNavComm
             } else if (node instanceof KPIInformationElementRef) {
                 KPIInformationElementRef ref = (KPIInformationElementRef) node;
                 ref.setDef((KPIInformationElement) definition);
+            } else if (node instanceof GroupedDependencyRef) {
+                GroupedDependencyRef ref = (GroupedDependencyRef) node;
+                ref.setDef((GroupedDependency) definition);
             }
             diagram.getNodes().add(element);
             node.setContRef(parent);

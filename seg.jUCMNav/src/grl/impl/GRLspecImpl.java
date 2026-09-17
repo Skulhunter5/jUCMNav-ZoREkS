@@ -12,6 +12,7 @@ import grl.ElementLink;
 import grl.EvaluationStrategy;
 import grl.GRLspec;
 import grl.GrlPackage;
+import grl.GroupedDependency;
 import grl.ImpactModel;
 import grl.IntentionalElement;
 import grl.StrategiesGroup;
@@ -198,6 +199,16 @@ public class GRLspecImpl extends MinimalEObjectImpl.Container implements GRLspec
 	 * @ordered
 	 */
 	protected FeatureModel featureModel;
+
+	/**
+	 * The cached value of the '{@link #getGroupedDependencies() <em>Grouped Dependencies</em>}' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getGroupedDependencies()
+	 * @generated NOT
+	 * @ordered
+	 */
+	protected EList groupedDependencies;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -479,6 +490,18 @@ public class GRLspecImpl extends MinimalEObjectImpl.Container implements GRLspec
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
+	 * @generated NOT
+	 */
+	public EList getGroupedDependencies() {
+		if (groupedDependencies == null) {
+			groupedDependencies = new EObjectContainmentWithInverseEList(GroupedDependency.class, this, GrlPackage.GR_LSPEC__GROUPED_DEPENDENCIES, GrlPackage.GROUPED_DEPENDENCY__GRLSPEC);
+		}
+		return groupedDependencies;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
 	 */
 	public NotificationChain eInverseAdd(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
@@ -517,6 +540,8 @@ public class GRLspecImpl extends MinimalEObjectImpl.Container implements GRLspec
 				if (featureModel != null)
 					msgs = ((InternalEObject)featureModel).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - GrlPackage.GR_LSPEC__FEATURE_MODEL, null, msgs);
 				return basicSetFeatureModel((FeatureModel)otherEnd, msgs);
+			case GrlPackage.GR_LSPEC__GROUPED_DEPENDENCIES:
+				return ((InternalEList)getGroupedDependencies()).basicAdd(otherEnd, msgs);
 			default:
 				return super.eInverseAdd(otherEnd, featureID, msgs);
 		}
@@ -557,6 +582,8 @@ public class GRLspecImpl extends MinimalEObjectImpl.Container implements GRLspec
 				return ((InternalEList)getKPIConversion()).basicRemove(otherEnd, msgs);
 			case GrlPackage.GR_LSPEC__FEATURE_MODEL:
 				return basicSetFeatureModel(null, msgs);
+			case GrlPackage.GR_LSPEC__GROUPED_DEPENDENCIES:
+				return ((InternalEList)getGroupedDependencies()).basicRemove(otherEnd, msgs);
 			default:
 				return super.eInverseRemove(otherEnd, featureID, msgs);
 		}
@@ -611,6 +638,8 @@ public class GRLspecImpl extends MinimalEObjectImpl.Container implements GRLspec
 				return getKPIConversion();
 			case GrlPackage.GR_LSPEC__FEATURE_MODEL:
 				return getFeatureModel();
+			case GrlPackage.GR_LSPEC__GROUPED_DEPENDENCIES:
+				return getGroupedDependencies();
 			default:
 				return super.eGet(featureID, resolve, coreType);
 		}
@@ -676,6 +705,10 @@ public class GRLspecImpl extends MinimalEObjectImpl.Container implements GRLspec
 			case GrlPackage.GR_LSPEC__FEATURE_MODEL:
 				setFeatureModel((FeatureModel)newValue);
 				return;
+			case GrlPackage.GR_LSPEC__GROUPED_DEPENDENCIES:
+				getGroupedDependencies().clear();
+				getGroupedDependencies().addAll((Collection)newValue);
+				return;
 			default:
 				super.eSet(featureID, newValue);
 				return;
@@ -731,6 +764,9 @@ public class GRLspecImpl extends MinimalEObjectImpl.Container implements GRLspec
 			case GrlPackage.GR_LSPEC__FEATURE_MODEL:
 				setFeatureModel((FeatureModel)null);
 				return;
+			case GrlPackage.GR_LSPEC__GROUPED_DEPENDENCIES:
+				getGroupedDependencies().clear();
+				return;
 			default:
 				super.eUnset(featureID);
 				return;
@@ -772,6 +808,8 @@ public class GRLspecImpl extends MinimalEObjectImpl.Container implements GRLspec
 				return kpiConversion != null && !kpiConversion.isEmpty();
 			case GrlPackage.GR_LSPEC__FEATURE_MODEL:
 				return featureModel != null;
+			case GrlPackage.GR_LSPEC__GROUPED_DEPENDENCIES:
+				return groupedDependencies != null && !groupedDependencies.isEmpty();
 			default:
 				return super.eIsSet(featureID);
 		}

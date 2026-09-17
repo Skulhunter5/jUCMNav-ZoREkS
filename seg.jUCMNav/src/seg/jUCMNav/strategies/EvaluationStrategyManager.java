@@ -60,6 +60,8 @@ import grl.Evaluation;
 import grl.EvaluationRange;
 import grl.EvaluationStrategy;
 import grl.GRLspec;
+import grl.GRLLinkableElement;
+import grl.GroupedDependency;
 import grl.ImportanceType;
 import grl.IntentionalElement;
 import grl.IntentionalElementRef;
@@ -452,22 +454,37 @@ public class EvaluationStrategyManager {
 
 	private void evaluateModel() {
 		while (algo.hasNextNode()) {
-            IntentionalElement element = algo.nextNode();
-            
+            GRLLinkableElement element = algo.nextNode();
+
+            if (element instanceof GroupedDependency) {
+                // the hub of a grouped dependency is evaluated by the algorithm-specific hook, not as an intentional element
+                GroupedDependency groupedDependency = (GroupedDependency) element;
+                Evaluation eval = (Evaluation) evaluations.get(groupedDependency);
+                if (eval == null) {
+                    eval = (Evaluation) ModelCreationFactory.getNewObject(strategy.getGrlspec().getUrnspec(), Evaluation.class);
+                    evaluations.put(groupedDependency, eval);
+                }
+                int val = algo.getGroupedDependencyEvaluation(strategy, evaluations, groupedDependency);
+                eval.setEvaluation(val);
+                syncIntentionalElementQualitativeEvaluation(eval, val);
+                continue;
+            }
+
+            IntentionalElement element2 = (IntentionalElement) element;
             if (algo instanceof TimedGRLStrategyAlgorithm) {
 	            //Check if the element is deactivated
 	            boolean deactivated = false;
-	            deactivated = isIgnored(element);
+	            deactivated = isIgnored(element2);
 	    		
 	    		//If the element is deactivated, skip it
 	    		if (deactivated)
 	    			continue;
             }
-            Evaluation eval = (Evaluation) evaluations.get(element);
-            int val = algo.getEvaluation(element);
+            Evaluation eval = (Evaluation) evaluations.get(element2);
+            int val = algo.getEvaluation(element2);
             eval.setEvaluation(val);
             syncIntentionalElementQualitativeEvaluation(eval, val);
-            setEvaluationMetadata(element, eval);
+            setEvaluationMetadata(element2, eval);
         }
 	}
 
@@ -831,6 +848,15 @@ public class EvaluationStrategyManager {
                     eval = (Evaluation) ModelCreationFactory.getNewObject(grl.getUrnspec(), Evaluation.class);
                 }
                 evaluations.put(elem, eval);
+            }          
+            
+            // grouped dependency hubs get an evaluation container as well; their value is computed by the algorithm hook
+            Iterator itGr = grl.getGroupedDependencies().iterator();
+            while (itGr.hasNext()) {
+                GroupedDependency hub = (GroupedDependency) itGr.next();
+                if (!evaluations.containsKey(hub)) {
+                    evaluations.put(hub, ModelCreationFactory.getNewObject(grl.getUrnspec(), Evaluation.class));
+                }
             }          
             
             // Go through all the KPIInformationElement and create a new KPIInformationConfig object if no one exist for this strategy

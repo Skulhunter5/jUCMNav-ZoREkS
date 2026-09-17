@@ -295,7 +295,13 @@ public class UrnOutlinePage extends ContentOutlinePage implements IAdaptable, IP
             if (viewers[i] != null) {
                 if (viewers[i].getContextMenu() != null) {
                     viewers[i].getContextMenu().dispose();
-                    viewers[i].setContextMenu(null);
+                    // GEF 3.25's setContextMenu(null) re-attaches a rebuilt popup menu to the live
+                    // control and NPEs on the nulled manager field (AbstractEditPartViewer.java:668);
+                    // only clear the field through the API when the viewer has no control to hang it on.
+                    Control control = viewers[i].getControl();
+                    if (control == null || control.isDisposed()) {
+                        viewers[i].setContextMenu(null);
+                    }
                 }
                 if (viewers[i].getEditDomain() instanceof UrnEditDomain) {
                     UrnEditDomain domain = (UrnEditDomain) viewers[i].getEditDomain();

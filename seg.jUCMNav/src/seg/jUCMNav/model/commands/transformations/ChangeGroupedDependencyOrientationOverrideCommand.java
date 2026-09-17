@@ -7,7 +7,6 @@ import seg.jUCMNav.Messages;
 import seg.jUCMNav.model.commands.JUCMNavCommand;
 import seg.jUCMNav.model.util.MetadataHelper;
 import urn.URNspec;
-import urncore.IURNDiagram;
 
 /**
  * Stores (or clears, with {@link #NONE}) a manual target-side override on a grouped dependency box,
@@ -56,7 +55,7 @@ public class ChangeGroupedDependencyOrientationOverrideCommand extends Command i
     }
 
     private URNspec getUrnspec() {
-        return ((IURNDiagram) groupedDependency.getDiagram()).getUrndefinition().getUrnspec();
+        return groupedDependency.getGrlspec().getUrnspec();
     }
 
     private void apply(String value) {

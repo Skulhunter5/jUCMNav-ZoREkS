@@ -1,25 +1,25 @@
 package seg.jUCMNav.strategies;
 
-import grl.IntentionalElement;
+import grl.GRLLinkableElement;
 
 /**
  * Data container object used by the propagation mechanism.
  * 
- * @author Jean-François Roy, Yanji Liu, gunterm
+ * @author Jean-Franï¿½ois Roy, Yanji Liu, gunterm
  * 
  */
 public class EvaluationCalculation {
-    private IntentionalElement element;
+    private GRLLinkableElement element;
     private int linkCalc;
     private int totalLinkDest;
 
-    public EvaluationCalculation(IntentionalElement element, int totalLink) {
+    public EvaluationCalculation(GRLLinkableElement element, int totalLink) {
         this.element = element;
         this.totalLinkDest = totalLink;
         linkCalc = 0;
     }
 
-	public IntentionalElement getElement() {
+	public GRLLinkableElement getElement() {
 		return element;
 	}
     

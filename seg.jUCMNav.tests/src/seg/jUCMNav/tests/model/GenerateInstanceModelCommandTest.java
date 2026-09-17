@@ -38,7 +38,7 @@ import grl.ElementLink;
 import grl.GRLGraph;
 import grl.GrlFactory;
 import grl.GroupedDependency;
-import grl.GroupedDependencyLink;
+import grl.GroupedDependencyRef;
 import grl.IntentionalElement;
 import grl.IntentionalElementRef;
 import grl.IntentionalElementType;
@@ -596,18 +596,17 @@ public class GenerateInstanceModelCommandTest {
         GRLGraph graph = command.getDiagram();
 
         // one box among the instance nodes, not owned by any actor
-        GroupedDependency box = findBox(graph);
+        GroupedDependencyRef box = findBox(graph);
         assertNotNull(box);
-        assertNotNull(box.getDestMultiplicity());
+        assertNotNull(box.getDef().getDestMultiplicity());
 
         // 2 source fans into the box + 1 fan into the target copy = one box between both sides
         assertEquals(3, graph.getConnections().size());
         int sourceFans = 0, targetFans = 0;
-        LinkRef boxDefRef = null;
         for (Object o : graph.getConnections()) {
             LinkRef ref = (LinkRef) o;
-            assertTrue(ref.getLink() instanceof GroupedDependencyLink);
-            assertSame(box, ref.getSource() instanceof GroupedDependency ? ref.getSource() : ref.getTarget());
+            assertTrue(ref.getLink() instanceof Dependency);
+            assertSame(box, ref.getSource() instanceof GroupedDependencyRef ? ref.getSource() : ref.getTarget());
             if (ref.getSource() == box) {
                 targetFans++;
                 ActorRef actor = ((ActorRef) ((IntentionalElementRef) ref.getTarget()).getContRef());
@@ -615,30 +614,30 @@ public class GenerateInstanceModelCommandTest {
             } else {
                 sourceFans++;
             }
-            boxDefRef = ref;
         }
         assertEquals(2, sourceFans);
         assertEquals(1, targetFans);
 
-        // all fans share one definition, referenced from the def lists of every instance touched
-        GroupedDependencyLink def = (GroupedDependencyLink) boxDefRef.getLink();
-        assertTrue(urn.getGrlspec().getLinks().contains(def));
-        assertEquals(3, def.getRefs().size());
-        // the adjusted target multiplicity (Nt = M = 1) lives on the box, not the definition
-        assertEquals("0..1", box.getDestMultiplicity()); //$NON-NLS-1$
+        // the definition lives in grlspec.getGroupedDependencies();
+        // each fan is an ordinary Dependency, separate from the others
+        GroupedDependency def = box.getDef();
+        assertTrue(urn.getGrlspec().getGroupedDependencies().contains(def));
+        assertEquals(1, def.getRefs().size());
+        assertEquals(box, def.getRefs().get(0));
+        // the adjusted target multiplicity (Nt = M = 1) lives on the definition
+        assertEquals("0..1", def.getDestMultiplicity()); //$NON-NLS-1$
 
-        // undo removes box, fans and the shared definition; redo restores them
+        // undo removes box, fans and the definition; redo restores them
         command.undo();
         assertEquals(0, graph.getNodes().size());
         assertEquals(0, graph.getConnections().size());
-        assertFalse(urn.getGrlspec().getLinks().contains(def));
+        assertEquals(0, urn.getGrlspec().getGroupedDependencies().size());
         command.redo();
-        LinkRef refAfterRedo = (LinkRef) graph.getConnections().get(0);
-        GroupedDependencyLink rebuiltDef = (GroupedDependencyLink) refAfterRedo.getLink();
-        assertTrue(urn.getGrlspec().getLinks().contains(rebuiltDef));
-        assertEquals(3, rebuiltDef.getRefs().size());
-        assertEquals(4, graph.getNodes().size());
-        assertNotNull(findBox(graph));
+        GroupedDependencyRef rebuiltBox = findBox(graph);
+        assertNotNull(rebuiltBox);
+        assertNotNull(rebuiltBox.getDef());
+        assertTrue(urn.getGrlspec().getGroupedDependencies().contains(rebuiltBox.getDef()));
+        assertEquals("0..1", rebuiltBox.getDef().getDestMultiplicity()); //$NON-NLS-1$
         assertEquals(3, graph.getConnections().size());
     }
 
@@ -658,10 +657,10 @@ public class GenerateInstanceModelCommandTest {
         command.execute();
 
         GRLGraph graph = command.getDiagram();
-        GroupedDependency box = findBox(graph);
+        GroupedDependencyRef box = findBox(graph);
         assertNotNull(box);
         // Nt = M = 3
-        assertEquals("0..3", box.getDestMultiplicity()); //$NON-NLS-1$
+        assertEquals("0..3", box.getDef().getDestMultiplicity()); //$NON-NLS-1$
         assertEquals(4, graph.getConnections().size());
     }
 
@@ -681,9 +680,9 @@ public class GenerateInstanceModelCommandTest {
         command.execute();
 
         GRLGraph graph = command.getDiagram();
-        GroupedDependency box = findBox(graph);
+        GroupedDependencyRef box = findBox(graph);
         assertNotNull(box);
-        assertEquals("0..3", box.getDestMultiplicity()); //$NON-NLS-1$
+        assertEquals("0..3", box.getDef().getDestMultiplicity()); //$NON-NLS-1$
         assertEquals(5, graph.getConnections().size());
     }
 
@@ -702,9 +701,9 @@ public class GenerateInstanceModelCommandTest {
 
         GRLGraph graph = command.getDiagram();
         // both Goal and Task have 2 copies -> N == M == 2 -> grouped
-        GroupedDependency box = findBox(graph);
+        GroupedDependencyRef box = findBox(graph);
         assertNotNull(box);
-        assertEquals("0..2", box.getDestMultiplicity()); //$NON-NLS-1$
+        assertEquals("0..2", box.getDef().getDestMultiplicity()); //$NON-NLS-1$
         assertEquals(4, graph.getConnections().size());
     }
 
@@ -752,9 +751,9 @@ public class GenerateInstanceModelCommandTest {
 
         GRLGraph graph = command.getDiagram();
         // 2..4 with Nt = M = 3 -> upper bound clamped to 3
-        GroupedDependency box = findBox(graph);
+        GroupedDependencyRef box = findBox(graph);
         assertNotNull(box);
-        assertEquals("2..3", box.getDestMultiplicity()); //$NON-NLS-1$
+        assertEquals("2..3", box.getDef().getDestMultiplicity()); //$NON-NLS-1$
     }
 
     @Test
@@ -776,15 +775,15 @@ public class GenerateInstanceModelCommandTest {
 
         GRLGraph graph = command.getDiagram();
         // requirement 4 exceeds the 3 target copies: the stored multiplicity becomes x..y with x > y
-        GroupedDependency box = findBox(graph);
+        GroupedDependencyRef box = findBox(graph);
         assertNotNull(box);
-        assertEquals("4..3", box.getDestMultiplicity()); //$NON-NLS-1$
-        assertTrue(DependencyMultiplicity.isUnsatisfiable(box.getDestMultiplicity()));
+        assertEquals("4..3", box.getDef().getDestMultiplicity()); //$NON-NLS-1$
+        assertTrue(DependencyMultiplicity.isUnsatisfiable(box.getDef().getDestMultiplicity()));
 
         // every fan link still exists in the model: only the drawing hides the box-to-target fans
         assertEquals(5, graph.getConnections().size()); // 2 source fans + 3 target fans
         for (Object o : graph.getConnections())
-            assertTrue(((LinkRef) o).getLink() instanceof GroupedDependencyLink);
+            assertTrue(((LinkRef) o).getLink() instanceof Dependency);
     }
 
     @Test
@@ -807,13 +806,13 @@ public class GenerateInstanceModelCommandTest {
         GRLGraph graph = command.getDiagram();
         // a single-instance copy of an impossible dependency cannot be a plain link (no box to draw
         // the "X" on), so it becomes a grouped dependency like every other impossible one
-        GroupedDependency box = findBox(graph);
+        GroupedDependencyRef box = findBox(graph);
         assertNotNull(box);
-        assertEquals("3..1", box.getDestMultiplicity()); //$NON-NLS-1$
-        assertTrue(DependencyMultiplicity.isUnsatisfiable(box.getDestMultiplicity()));
+        assertEquals("3..1", box.getDef().getDestMultiplicity()); //$NON-NLS-1$
+        assertTrue(DependencyMultiplicity.isUnsatisfiable(box.getDef().getDestMultiplicity()));
         assertEquals(2, graph.getConnections().size()); // one visible source fan + one hidden target fan
         for (Object o : graph.getConnections())
-            assertTrue(((LinkRef) o).getLink() instanceof GroupedDependencyLink);
+            assertTrue(((LinkRef) o).getLink() instanceof Dependency);
     }
 
     @Test
@@ -836,17 +835,18 @@ public class GenerateInstanceModelCommandTest {
         // one box per type-model dependency, each with its own 2+1 fan set and own definition
         assertEquals(2, countBoxes(graph));
         assertEquals(6, graph.getConnections().size());
-        int definitions = 0;
+        int dependencies = 0;
         for (Object o : graph.getConnections()) {
             LinkRef ref = (LinkRef) o;
-            if (ref.getLink() instanceof GroupedDependencyLink)
-                definitions++;
+            if (ref.getLink() instanceof Dependency)
+                dependencies++;
         }
-        // 6 fans against exactly 2 distinct definitions
-        java.util.Set<GroupedDependencyLink> defs = new java.util.HashSet<GroupedDependencyLink>();
+        // 6 fans against exactly 2 distinct fan definitions per box
+        java.util.Set<Dependency> defs = new java.util.HashSet<Dependency>();
         for (Object o : graph.getConnections())
-            defs.add((GroupedDependencyLink) ((LinkRef) o).getLink());
-        assertEquals(2, defs.size());
+            defs.add((Dependency) ((LinkRef) o).getLink());
+        assertEquals(6, dependencies);
+        assertEquals(6, defs.size());
     }
 
     @Test
@@ -869,18 +869,18 @@ public class GenerateInstanceModelCommandTest {
         command.execute();
         GRLGraph graph = command.getDiagram();
 
-        GroupedDependency box = findBox(graph);
+        GroupedDependencyRef box = findBox(graph);
         assertNotNull(box);
-        LinkRef firstFan = (LinkRef) graph.getConnections().get(0);
-        GroupedDependencyLink sharedDef = (GroupedDependencyLink) firstFan.getLink();
+        GroupedDependency sharedDef = box.getDef();
         int linksBefore = urn.getGrlspec().getLinks().size();
 
-        // deleting the box must tear down the whole group: box, fans, and the now-orphaned definition
+        // deleting the box must tear down the whole group: box, fans, and the definition
         DeleteGRLNodeCommand delete = new DeleteGRLNodeCommand(box);
         delete.execute();
         assertEquals(3, graph.getNodes().size());
         assertEquals(0, graph.getConnections().size());
-        assertEquals(linksBefore - 1, urn.getGrlspec().getLinks().size());
+        assertEquals(linksBefore - 3, urn.getGrlspec().getLinks().size()); // the 3 fan definitions
+        assertFalse(urn.getGrlspec().getGroupedDependencies().contains(sharedDef));
 
         // deleting it again must be a no-op, not a crash
         DeleteGRLNodeCommand deleteAgain = new DeleteGRLNodeCommand(box);
@@ -924,9 +924,10 @@ public class GenerateInstanceModelCommandTest {
                 loadedInstance = (GRLGraph) o;
         }
         assertNotNull("instance graph must survive the roundtrip", loadedInstance);
-        GroupedDependency box = findBox(loadedInstance);
+        GroupedDependencyRef box = findBox(loadedInstance);
         assertNotNull("box, multiplicity value and the whole fan set come back", box);
-        assertEquals("0..1", box.getDestMultiplicity()); //$NON-NLS-1$
+        assertNotNull(box.getDef());
+        assertEquals("0..1", box.getDef().getDestMultiplicity()); //$NON-NLS-1$
         assertEquals(3, loadedInstance.getConnections().size());
         for (Object o : loadedInstance.getConnections()) {
             LinkRef ref = (LinkRef) o;
@@ -948,36 +949,36 @@ public class GenerateInstanceModelCommandTest {
         counts.put(actorB, Integer.valueOf(1));
         GenerateInstanceModelCommand command = new GenerateInstanceModelCommand(urn, source, counts, 20);
         command.execute();
-        GroupedDependency box = findBox(command.getDiagram());
+        GroupedDependencyRef box = findBox(command.getDiagram());
         assertNotNull(box);
-        assertEquals("0..1", box.getDestMultiplicity()); //$NON-NLS-1$
+        assertEquals("0..1", box.getDef().getDestMultiplicity()); //$NON-NLS-1$
 
-        ChangeGroupedDependencyTargetMultiplicityCommand change = new ChangeGroupedDependencyTargetMultiplicityCommand(box, "2..3"); //$NON-NLS-1$
+        ChangeGroupedDependencyTargetMultiplicityCommand change = new ChangeGroupedDependencyTargetMultiplicityCommand(box.getDef(), "2..3"); //$NON-NLS-1$
         assertTrue(change.canExecute());
         change.execute();
-        assertEquals("2..3", box.getDestMultiplicity()); //$NON-NLS-1$
+        assertEquals("2..3", box.getDef().getDestMultiplicity()); //$NON-NLS-1$
         change.undo();
-        assertEquals("0..1", box.getDestMultiplicity()); //$NON-NLS-1$
+        assertEquals("0..1", box.getDef().getDestMultiplicity()); //$NON-NLS-1$
         change.redo();
-        assertEquals("2..3", box.getDestMultiplicity()); //$NON-NLS-1$
+        assertEquals("2..3", box.getDef().getDestMultiplicity()); //$NON-NLS-1$
 
         // an empty value clears the multiplicity rather than storing null
-        ChangeGroupedDependencyTargetMultiplicityCommand clear = new ChangeGroupedDependencyTargetMultiplicityCommand(box, ""); //$NON-NLS-1$
+        ChangeGroupedDependencyTargetMultiplicityCommand clear = new ChangeGroupedDependencyTargetMultiplicityCommand(box.getDef(), ""); //$NON-NLS-1$
         clear.execute();
-        assertEquals("", box.getDestMultiplicity()); //$NON-NLS-1$
+        assertEquals("", box.getDef().getDestMultiplicity()); //$NON-NLS-1$
     }
 
-    private static GroupedDependency findBox(GRLGraph graph) {
+    private static GroupedDependencyRef findBox(GRLGraph graph) {
         for (Object o : graph.getNodes())
-            if (o instanceof GroupedDependency)
-                return (GroupedDependency) o;
+            if (o instanceof GroupedDependencyRef)
+                return (GroupedDependencyRef) o;
         return null;
     }
 
     private static int countBoxes(GRLGraph graph) {
         int count = 0;
         for (Object o : graph.getNodes())
-            if (o instanceof GroupedDependency)
+            if (o instanceof GroupedDependencyRef)
                 count++;
         return count;
     }

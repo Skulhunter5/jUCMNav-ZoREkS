@@ -21,7 +21,7 @@ import grl.ElementLink;
 import grl.GRLGraph;
 import grl.GrlFactory;
 import grl.GroupedDependency;
-import grl.GroupedDependencyLink;
+import grl.GroupedDependencyRef;
 import grl.IntentionalElement;
 import grl.IntentionalElementRef;
 import grl.LinkRef;
@@ -108,6 +108,7 @@ public class GenerateInstanceModelCommand extends Command implements JUCMNavComm
     private List<Actor> createdActors = new ArrayList<Actor>();
     private List<IntentionalElement> createdIntElements = new ArrayList<IntentionalElement>();
     private List<ElementLink> createdLinks = new ArrayList<ElementLink>();
+    private List<GroupedDependency> createdGroupedDependencies = new ArrayList<GroupedDependency>();
 
     private Map<ActorRef, List<Actor>> actorCopies = new LinkedHashMap<ActorRef, List<Actor>>();
     private Map<IntentionalElementRef, List<IntentionalElement>> intElementCopies = new LinkedHashMap<IntentionalElementRef, List<IntentionalElement>>();
@@ -320,6 +321,8 @@ public class GenerateInstanceModelCommand extends Command implements JUCMNavComm
             urn.getGrlspec().getIntElements().remove(element);
         for (ElementLink link : createdLinks)
             urn.getGrlspec().getLinks().remove(link);
+        for (GroupedDependency groupedDependency : createdGroupedDependencies)
+            urn.getGrlspec().getGroupedDependencies().remove(groupedDependency);
 
         testPreConditions();
     }
@@ -350,6 +353,7 @@ public class GenerateInstanceModelCommand extends Command implements JUCMNavComm
         createdActors.clear();
         createdIntElements.clear();
         createdLinks.clear();
+        createdGroupedDependencies.clear();
         actorCopies.clear();
         intElementCopies.clear();
         refCopies.clear();
@@ -506,9 +510,21 @@ public class GenerateInstanceModelCommand extends Command implements JUCMNavComm
     /**
      * Replicates a type-model dependency. When one side has exactly one instance (N == 1 and M == 1)
      * the dependency stays a plain directed link with the adjusted target multiplicity; otherwise it
-     * becomes a grouped dependency: a single box, one shared {@link GroupedDependencyLink} definition
-     * for all the fan links, N links from the source instances to the box and M links from the box to
-     * the target instances. The adjusted target multiplicity lives on the box.
+     * becomes a grouped dependency: a single definition (the box), the drawn reference to it, and
+     * ordinary {@link Dependency} fan links connecting the source instances and the target instances
+     * through the box. The adjusted target multiplicity lives on the box.
+     * 
+     * <p>
+     * Source and target follow the same naming as ordinary dependencies: the <em>source</em> is the
+     * drawing-start end of the original link (the goals that may be restricted), the <em>target</em>
+     * is the drawing-end end (the goals whose satisfaction determines the multiplicity). As with a
+     * hand-drawn dependency, each generated {@link ElementLink} has its {@code src} on the
+     * drawing-end and its {@code dest} on the drawing-start: a source copy keeps its fan in
+     * {@code getLinksDest()}, so the standard dependency semantics evaluate that source against the
+     * element on the drawing-end (the box), and the box in turn keeps its target fans in
+     * {@code getLinksDest()}, so the multiplicity counts the target instances. The drawn
+     * {@link LinkRef} direction is unchanged (source -> box, box -> target).
+     * </p>
      * 
      * <p>
      * An adjustment that cannot be satisfied (the requirement exceeds the number of target copies,
@@ -533,22 +549,25 @@ public class GenerateInstanceModelCommand extends Command implements JUCMNavComm
             urn.getGrlspec().getLinks().add(dep);
             createdLinks.add(dep);
             dep.setDestMultiplicity(destMultiplicity);
-            sourceCopies.get(0).getLinksSrc().add(dep);
-            targetCopies.get(0).getLinksDest().add(dep);
+            // as with a hand-drawn dependency, src is the drawing-end (target copy) and the source
+            // copy is the restricted dest: the source is capped by the target's evaluation
+            targetCopies.get(0).getLinksSrc().add(dep);
+            sourceCopies.get(0).getLinksDest().add(dep);
             graph.getConnections().add(createLinkRef(dep, sourceRefCopies.get(0), targetRefCopies.get(0)));
             return;
         }
 
-        GroupedDependencyLink dep = GrlFactory.eINSTANCE.createGroupedDependencyLink();
-        dep.setId(""); //$NON-NLS-1$
-        URNNamingHelper.setElementNameAndID(urn, dep);
-        urn.getGrlspec().getLinks().add(dep);
-        createdLinks.add(dep);
-
         GroupedDependency box = (GroupedDependency) GrlFactory.eINSTANCE.createGroupedDependency();
-        box.setName(dep.getName());
+        box.setId(""); //$NON-NLS-1$
         URNNamingHelper.setElementNameAndID(urn, box);
         box.setDestMultiplicity(destMultiplicity);
+        urn.getGrlspec().getGroupedDependencies().add(box);
+        createdGroupedDependencies.add(box);
+
+        GroupedDependencyRef boxRef = (GroupedDependencyRef) GrlFactory.eINSTANCE.createGroupedDependencyRef();
+        boxRef.setDef(box);
+        boxRef.setId(""); //$NON-NLS-1$
+        URNNamingHelper.setElementNameAndID(urn, boxRef);
 
         // place the box half-way between the source and target instance groups
         int sx = 0, sy = 0;
@@ -556,20 +575,28 @@ public class GenerateInstanceModelCommand extends Command implements JUCMNavComm
             IntentionalElementRef ref = sourceRefCopies.get(i);
             sx += ref.getX();
             sy += ref.getY();
-            ref.getDef().getLinksSrc().add(dep);
-            graph.getConnections().add(createLinkRef(dep, ref, box));
+            Dependency link = (Dependency) copyElementLink(sourceDep);
+            link.setSrc(box);
+            link.setDest(sourceCopies.get(i));
+            urn.getGrlspec().getLinks().add(link);
+            createdLinks.add(link);
+            graph.getConnections().add(createLinkRef(link, ref, boxRef));
         }
         int tx = 0, ty = 0;
         for (int j = 0; j < m; j++) {
             IntentionalElementRef ref = targetRefCopies.get(j);
             tx += ref.getX();
             ty += ref.getY();
-            ref.getDef().getLinksDest().add(dep);
-            graph.getConnections().add(createLinkRef(dep, box, ref));
+            Dependency link = (Dependency) copyElementLink(sourceDep);
+            link.setSrc(targetCopies.get(j));
+            link.setDest(box);
+            urn.getGrlspec().getLinks().add(link);
+            createdLinks.add(link);
+            graph.getConnections().add(createLinkRef(link, boxRef, ref));
         }
-        box.setX(((sx / n) + (tx / m)) / 2);
-        box.setY(((sy / n) + (ty / m)) / 2);
-        graph.getNodes().add(box);
+        boxRef.setX(((sx / n) + (tx / m)) / 2);
+        boxRef.setY(((sy / n) + (ty / m)) / 2);
+        graph.getNodes().add(boxRef);
     }
 
     private LinkRef createLinkRef(ElementLink link, urncore.IURNNode source, urncore.IURNNode target) {

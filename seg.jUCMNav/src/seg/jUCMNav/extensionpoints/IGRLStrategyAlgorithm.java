@@ -2,6 +2,8 @@ package seg.jUCMNav.extensionpoints;
 
 import grl.Actor;
 import grl.EvaluationStrategy;
+import grl.GRLLinkableElement;
+import grl.GroupedDependency;
 import grl.IntentionalElement;
 
 import java.util.HashMap;
@@ -10,7 +12,7 @@ import java.util.HashMap;
  * Interface used by GRLStrategyAlgorithm. These methods should be implement to support a new strategies algorithm. It defines the evaluation calculation and
  * the propagation algorithm
  * 
- * @author Jean-François Roy, sghanava
+ * @author Jean-Franï¿½ois Roy, sghanava
  * 
  */
 public interface IGRLStrategyAlgorithm {
@@ -67,7 +69,7 @@ public interface IGRLStrategyAlgorithm {
     /**
      * @return the next node used in the calculation
      */
-    public IntentionalElement nextNode();
+    public GRLLinkableElement nextNode();
 
     /**
      * @param element
@@ -89,4 +91,22 @@ public interface IGRLStrategyAlgorithm {
     public int getEvaluationType();
     
     public boolean isConstraintSolverAlgorithm();
+
+    /**
+     * Computes the evaluation of a grouped dependency hub from the evaluations of its targets and
+     * its destination multiplicity. The default implementation treats the grouped dependency as
+     * imposing no constraint on its sources; algorithms that support grouped dependencies override
+     * it.
+     * 
+     * @param strategy
+     *            the strategy being evaluated
+     * @param evaluations
+     *            HashMap containing the pair of GRLLinkableElement-&gt;Evaluation known so far
+     * @param groupedDependency
+     *            the grouped dependency to evaluate
+     * @return the evaluation of the grouped dependency, between -100 and 100
+     */
+    public default int getGroupedDependencyEvaluation(EvaluationStrategy strategy, HashMap evaluations, GroupedDependency groupedDependency) {
+        return SATISFICED;
+    }
 }

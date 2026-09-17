@@ -6,6 +6,7 @@
  */
 package grl;
 
+import org.eclipse.emf.common.util.EList;
 
 /**
  * <!-- begin-user-doc -->
@@ -17,13 +18,15 @@ package grl;
  * </p>
  * <ul>
  *   <li>{@link grl.GroupedDependency#getDestMultiplicity <em>Dest Multiplicity</em>}</li>
+ *   <li>{@link grl.GroupedDependency#getGrlspec <em>Grlspec</em>}</li>
+ *   <li>{@link grl.GroupedDependency#getRefs <em>Refs</em>}</li>
  * </ul>
  *
  * @see grl.GrlPackage#getGroupedDependency()
  * @model
  * @generated NOT
  */
-public interface GroupedDependency extends GRLNode {
+public interface GroupedDependency extends GRLLinkableElement {
     /**
 	 * Returns the value of the '<em><b>Dest Multiplicity</b></em>' attribute.
 	 * <!-- begin-user-doc -->
@@ -49,5 +52,46 @@ public interface GroupedDependency extends GRLNode {
 	 * @generated NOT
 	 */
     void setDestMultiplicity(String value);
+
+    /**
+	 * Returns the value of the '<em><b>Grlspec</b></em>' container reference.
+	 * <!-- begin-user-doc -->
+     * <p>
+     * If the meaning of the '<em>Grlspec</em>' container reference isn't clear,
+     * there really should be more of a description here...
+     * </p>
+     * <!-- end-user-doc -->
+	 * @return the value of the '<em>Grlspec</em>' container reference.
+	 * @see #setGrlspec(GRLspec)
+	 * @see grl.GrlPackage#getGroupedDependency_Grlspec()
+	 * @model opposite="groupedDependencies" transient="false" changeable="false"
+	 * @generated NOT
+	 */
+    GRLspec getGrlspec();
+
+    /**
+	 * Sets the value of the '{@link grl.GroupedDependency#getGrlspec <em>Grlspec</em>}' container reference.
+	 * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Grlspec</em>' container reference.
+	 * @see #getGrlspec()
+	 * @generated NOT
+	 */
+    void setGrlspec(GRLspec value);
+
+    /**
+	 * Returns the value of the '<em><b>Refs</b></em>' reference list.
+	 * <!-- begin-user-doc -->
+     * <p>
+     * If the meaning of the '<em>Refs</em>' reference list isn't clear,
+     * there really should be more of a description here...
+     * </p>
+     * <!-- end-user-doc -->
+	 * @return the value of the '<em>Refs</em>' reference list.
+	 * @see grl.GrlPackage#getGroupedDependency_Refs()
+	 * @model opposite="def"
+	 * @generated NOT
+	 */
+    EList<GroupedDependencyRef> getRefs();
 
 } // GroupedDependency

@@ -23,6 +23,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.PlatformUI;
 
 import grl.GroupedDependency;
+import grl.GroupedDependencyRef;
 import grl.LinkRef;
 import seg.jUCMNav.Messages;
 import seg.jUCMNav.editpolicies.element.GRLNodeComponentEditPolicy;
@@ -53,9 +54,9 @@ public class GroupedDependencyEditPart extends GrlNodeEditPart implements NodeEd
 
     /**
      * @param model
-     *            the grouped dependency to draw
+     *            the grouped dependency box to draw
      */
-    public GroupedDependencyEditPart(GroupedDependency model) {
+    public GroupedDependencyEditPart(GroupedDependencyRef model) {
         super();
         setModel(model);
     }
@@ -87,10 +88,17 @@ public class GroupedDependencyEditPart extends GrlNodeEditPart implements NodeEd
     }
 
     /**
-     * @return the grouped dependency.
+     * @return the grouped dependency box (a {@link GroupedDependencyRef}).
      */
-    private GroupedDependency getNode() {
-        return (GroupedDependency) getModel();
+    private GroupedDependencyRef getNode() {
+        return (GroupedDependencyRef) getModel();
+    }
+
+    /**
+     * @return the grouped dependency definition behind the box.
+     */
+    private GroupedDependency getDef() {
+        return getNode().getDef();
     }
 
     /**
@@ -156,14 +164,14 @@ public class GroupedDependencyEditPart extends GrlNodeEditPart implements NodeEd
     }
 
     private void openMultiplicityDialog() {
-        String current = getNode().getDestMultiplicity();
+        String current = getDef().getDestMultiplicity();
         Shell shell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
         MultiplicityDialog dialog = new MultiplicityDialog(shell, DependencyMultiplicity.normalizeStored(current),
                 Messages.getString("MultiplicityDialog.titleTarget"), //$NON-NLS-1$
                 Messages.getString("MultiplicityDialog.labelTarget")); //$NON-NLS-1$
         if (dialog.open() == IDialogConstants.OK_ID) {
             ChangeGroupedDependencyTargetMultiplicityCommand command = new ChangeGroupedDependencyTargetMultiplicityCommand(
-                    getNode(), dialog.getValue());
+                    getDef(), dialog.getValue());
             getViewer().getEditDomain().getCommandStack().execute(command);
         }
     }
@@ -255,10 +263,10 @@ public class GroupedDependencyEditPart extends GrlNodeEditPart implements NodeEd
     }
 
     /**
-     * The box orientation override is stored as element metadata on the grouped dependency itself.
+     * The box orientation override is stored as element metadata on the grouped dependency definition.
      * Flipping an existing override to another one fires the EMF notification on that {@link Metadata}
      * child (its value), not on the grouped dependency, so by itself the edit part would never hear
-     * about an override-to-override switch. Registering as an adapter on the node's metadata children,
+     * about an override-to-override switch. Registering as an adapter on the definition's metadata children,
      * recomputed whenever that list changes, closes the gap; the refresh in
      * {@link #notifyChanged(Notification)} then re-runs {@link #updateTargetOrientation()}.
      */
@@ -267,7 +275,7 @@ public class GroupedDependencyEditPart extends GrlNodeEditPart implements NodeEd
             return;
         syncingMetadataAdapters = true;
         try {
-            Set desired = new HashSet(getNode().getMetadata());
+            Set desired = new HashSet(getDef().getMetadata());
             if (desired.equals(metadataAdapters))
                 return;
             for (Iterator it = new ArrayList(metadataAdapters).iterator(); it.hasNext();) {
@@ -323,14 +331,14 @@ public class GroupedDependencyEditPart extends GrlNodeEditPart implements NodeEd
      * @see seg.jUCMNav.editparts.ModelElementEditPart#refreshVisuals()
      */
     protected void refreshVisuals() {
-        GroupedDependency node = getNode();
+        GroupedDependencyRef node = getNode();
         Point location = new Point(node.getX(), node.getY());
         Dimension size = getNodeFigure().getSize().getCopy();
         Rectangle bounds = new Rectangle(location, size);
         getFigure().setBounds(bounds);
         getFigure().setLocation(location);
 
-        boolean impossible = DependencyMultiplicity.isUnsatisfiable(node.getDestMultiplicity());
+        boolean impossible = DependencyMultiplicity.isUnsatisfiable(getDef().getDestMultiplicity());
         getNodeFigure().setImpossible(impossible);
         if (impossible != wasImpossible) {
             // the fan connections decide their own visibility from the box; nudge them so a switch
@@ -366,7 +374,7 @@ public class GroupedDependencyEditPart extends GrlNodeEditPart implements NodeEd
         if (getFigure() == null || getNode().getPred() == null || getNode().getSucc() == null)
             return;
 
-        int override = overrideSide(MetadataHelper.getMetaData(getNode(), ChangeGroupedDependencyOrientationOverrideCommand.ORIENTATION_OVERRIDE_KEY));
+        int override = overrideSide(MetadataHelper.getMetaData(getDef(), ChangeGroupedDependencyOrientationOverrideCommand.ORIENTATION_OVERRIDE_KEY));
         if (override >= 0) {
             getNodeFigure().setTargetSide(override);
             return;
@@ -386,7 +394,7 @@ public class GroupedDependencyEditPart extends GrlNodeEditPart implements NodeEd
         }
 
         int targetX, targetY, targetCount;
-        if (DependencyMultiplicity.isUnsatisfiable(getNode().getDestMultiplicity())) {
+        if (DependencyMultiplicity.isUnsatisfiable(getDef().getDestMultiplicity())) {
             // Impossible box: its target fan links are drawn invisible, so base the direction on
             // the hidden targets and it would flip arbitrarily in the empty space the user sees.
             // Orient from the visible sources only: the target side faces away from the sources

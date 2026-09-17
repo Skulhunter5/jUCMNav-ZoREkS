@@ -3,7 +3,7 @@
  */
 package seg.jUCMNav.editpolicies.element;
 
-import grl.GroupedDependency;
+import grl.GroupedDependencyRef;
 import grl.LinkRef;
 
 import org.eclipse.gef.commands.Command;
@@ -30,11 +30,11 @@ public class LinkRefComponentEditPolicy extends ComponentEditPolicy {
         LinkRef linkref = (LinkRef) getHost().getModel();
 
         // Deleting one of the fan links of a grouped dependency deletes the whole group
-        // (the box, all its fan links and the shared dependency definition).
-        if (linkref.getSource() instanceof GroupedDependency) {
-            return new DeleteGRLNodeCommand((GroupedDependency) linkref.getSource());
-        } else if (linkref.getTarget() instanceof GroupedDependency) {
-            return new DeleteGRLNodeCommand((GroupedDependency) linkref.getTarget());
+        // (the box, all its fan links and the grouped dependency definition).
+        if (linkref.getSource() instanceof GroupedDependencyRef) {
+            return new DeleteGRLNodeCommand((GroupedDependencyRef) linkref.getSource());
+        } else if (linkref.getTarget() instanceof GroupedDependencyRef) {
+            return new DeleteGRLNodeCommand((GroupedDependencyRef) linkref.getTarget());
         }
 
         return new DeleteLinkRefCommand(linkref);

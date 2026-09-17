@@ -1,7 +1,7 @@
 package seg.jUCMNav.actions;
 
 import grl.GroupedDependency;
-import grl.GroupedDependencyLink;
+import grl.GroupedDependencyRef;
 import grl.LinkRef;
 
 import java.util.Iterator;
@@ -25,7 +25,7 @@ import seg.jUCMNav.views.dialogs.MultiplicityDialog;
  * 
  * <p>
  * The whole construct is the grouped dependency: the action is enabled on a single D box or on a
- * single fan link (a {@link LinkRef} whose definition is a {@link GroupedDependencyLink}), so the
+ * single fan link (a {@link LinkRef} connecting the box, a {@link GroupedDependencyRef}), so the
  * target multiplicity can be changed from either.
  * </p>
  * 
@@ -46,19 +46,16 @@ public class ChangeGroupedDependencyTargetMultiplicityAction extends URNSelectio
     }
 
     /**
-     * Resolves the grouped dependency box behind a fan link, or {@code null} when the link is not a
-     * fan (its definition is not a {@link GroupedDependencyLink}) or the box cannot be found on
-     * either end.
+     * Resolves the grouped dependency definition behind a fan link, or {@code null} when the link is
+     * not a fan (neither end is a {@link GroupedDependencyRef}).
      */
     public static GroupedDependency findGroupedDependency(LinkRef linkRef) {
-        if (linkRef == null || linkRef.getLink() == null)
+        if (linkRef == null)
             return null;
-        if (!(linkRef.getLink() instanceof GroupedDependencyLink))
-            return null;
-        if (linkRef.getSource() instanceof GroupedDependency)
-            return (GroupedDependency) linkRef.getSource();
-        if (linkRef.getTarget() instanceof GroupedDependency)
-            return (GroupedDependency) linkRef.getTarget();
+        if (linkRef.getSource() instanceof GroupedDependencyRef)
+            return ((GroupedDependencyRef) linkRef.getSource()).getDef();
+        if (linkRef.getTarget() instanceof GroupedDependencyRef)
+            return ((GroupedDependencyRef) linkRef.getTarget()).getDef();
         return null;
     }
 
@@ -71,7 +68,7 @@ public class ChangeGroupedDependencyTargetMultiplicityAction extends URNSelectio
         for (Iterator iter = getSelectedObjects().iterator(); iter.hasNext();) {
             Object obj = iter.next();
             if (obj instanceof GroupedDependencyEditPart) {
-                box = (GroupedDependency) ((GroupedDependencyEditPart) obj).getModel();
+                box = ((GroupedDependencyRef) ((GroupedDependencyEditPart) obj).getModel()).getDef();
             } else if (obj instanceof LinkRefEditPart) {
                 LinkRef linkRef = ((LinkRefEditPart) obj).getLinkRef();
                 if (ReusedElementUtil.isReuseLink(linkRef.getLink()))

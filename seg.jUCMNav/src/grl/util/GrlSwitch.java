@@ -330,21 +330,21 @@ public class GrlSwitch {
 			case GrlPackage.GROUPED_DEPENDENCY: {
 				GroupedDependency groupedDependency = (GroupedDependency)theEObject;
 				Object result = caseGroupedDependency(groupedDependency);
-				if (result == null) result = caseGRLNode(groupedDependency);
+				if (result == null) result = caseGRLLinkableElement(groupedDependency);
 				if (result == null) result = caseGRLmodelElement(groupedDependency);
-				if (result == null) result = caseIURNNode(groupedDependency);
 				if (result == null) result = caseURNmodelElement(groupedDependency);
 				if (result == null) result = caseCORENamedElement(groupedDependency);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
-			case GrlPackage.GROUPED_DEPENDENCY_LINK: {
-				GroupedDependencyLink groupedDependencyLink = (GroupedDependencyLink)theEObject;
-				Object result = caseGroupedDependencyLink(groupedDependencyLink);
-				if (result == null) result = caseElementLink(groupedDependencyLink);
-				if (result == null) result = caseGRLmodelElement(groupedDependencyLink);
-				if (result == null) result = caseURNmodelElement(groupedDependencyLink);
-				if (result == null) result = caseCORENamedElement(groupedDependencyLink);
+			case GrlPackage.GROUPED_DEPENDENCY_REF: {
+				GroupedDependencyRef groupedDependencyRef = (GroupedDependencyRef)theEObject;
+				Object result = caseGroupedDependencyRef(groupedDependencyRef);
+				if (result == null) result = caseGRLNode(groupedDependencyRef);
+				if (result == null) result = caseGRLmodelElement(groupedDependencyRef);
+				if (result == null) result = caseIURNNode(groupedDependencyRef);
+				if (result == null) result = caseURNmodelElement(groupedDependencyRef);
+				if (result == null) result = caseCORENamedElement(groupedDependencyRef);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
@@ -593,17 +593,17 @@ public class GrlSwitch {
 	}
 
     /**
-	 * Returns the result of interpreting the object as an instance of '<em>Grouped Dependency Link</em>'.
+	 * Returns the result of interpreting the object as an instance of '<em>Grouped Dependency Ref</em>'.
 	 * <!-- begin-user-doc -->
      * This implementation returns null;
      * returning a non-null result will terminate the switch.
      * <!-- end-user-doc -->
 	 * @param object the target of the switch.
-	 * @return the result of interpreting the object as an instance of '<em>Grouped Dependency Link</em>'.
+	 * @return the result of interpreting the object as an instance of '<em>Grouped Dependency Ref</em>'.
 	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
 	 * @generated NOT
 	 */
-    public Object caseGroupedDependencyLink(GroupedDependencyLink object) {
+    public Object caseGroupedDependencyRef(GroupedDependencyRef object) {
 		return null;
 	}
 

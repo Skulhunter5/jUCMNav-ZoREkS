@@ -323,4 +323,20 @@ public interface GRLspec extends EObject {
 	 */
 	void setFeatureModel(FeatureModel value);
 
+	/**
+	 * Returns the value of the '<em><b>Grouped Dependencies</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+     * <p>
+     * If the meaning of the '<em>Grouped Dependencies</em>' containment reference list isn't clear,
+     * there really should be more of a description here...
+     * </p>
+     * <!-- end-user-doc -->
+	 * @return the value of the '<em>Grouped Dependencies</em>' containment reference list.
+	 * @see grl.GrlPackage#getGRLspec_GroupedDependencies()
+	 * @see grl.GroupedDependency#getGrlspec
+	 * @model containment="true" opposite="grlspec"
+	 * @generated NOT
+	 */
+	EList<GroupedDependency> getGroupedDependencies();
+
 } // GRLspec

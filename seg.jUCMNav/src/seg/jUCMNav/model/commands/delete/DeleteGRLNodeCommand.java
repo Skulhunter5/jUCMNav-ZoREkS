@@ -6,6 +6,7 @@ package seg.jUCMNav.model.commands.delete;
 import fm.Feature;
 import fm.FeatureDiagram;
 import grl.GRLNode;
+import grl.GroupedDependencyRef;
 import grl.IntentionalElementRef;
 import grl.kpimodel.KPIInformationElementRef;
 
@@ -15,6 +16,7 @@ import org.eclipse.gef.commands.CompoundCommand;
 
 import seg.jUCMNav.Messages;
 import seg.jUCMNav.model.commands.delete.internal.PreDeleteUrnModelElementCommand;
+import seg.jUCMNav.model.commands.delete.internal.RemoveGroupedDependencyCommand;
 import seg.jUCMNav.model.commands.delete.internal.RemoveURNmodelElementCommand;
 import seg.jUCMNav.model.util.MetadataHelper;
 import seg.jUCMNav.strategies.util.ReusedElementUtil;
@@ -23,7 +25,7 @@ import seg.jUCMNav.views.preferences.DeletePreferences;
 /**
  * Delete a GRLNode from a GRLGraph
  * 
- * @author Jean-François Roy
+ * @author Jean-Franï¿½ois Roy
  * 
  */
 public class DeleteGRLNodeCommand extends CompoundCommand {
@@ -73,6 +75,13 @@ public class DeleteGRLNodeCommand extends CompoundCommand {
 			if (element.getDef().getRefs().size() == 1 && DeletePreferences.getDeleteDefinition(element)) {
 				add(new DeleteKPIInformationElementCommand(element.getDef()));
 			}
+		} else if (ref instanceof GroupedDependencyRef) {
+			GroupedDependencyRef gdRef = (GroupedDependencyRef) ref;
+			// The box definition only exists to be drawn; deleting the last box of the group
+			// cascades to the definition, exactly like the original grouped dependency construct
+			// removed its fans and shared definition together.
+			if (gdRef.getDef() != null && gdRef.getDef().getRefs().size() == 1)
+				add(new RemoveGroupedDependencyCommand(gdRef.getDef()));
 		}
 		super.execute();
 

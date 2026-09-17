@@ -28,6 +28,7 @@ import org.eclipse.gef.ui.parts.TreeViewer;
 import org.eclipse.jface.action.IMenuListener;
 import org.eclipse.jface.util.TransferDropTargetListener;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.actions.ActionFactory;
 import org.eclipse.ui.internal.PartSite;
@@ -160,8 +161,13 @@ public abstract class UrnEditor extends GraphicalEditorWithFlyoutPalette impleme
 
             if (getGraphicalViewer().getContextMenu() != null) {
                 //getGraphicalViewer().getContextMenu().dispose();
-                getGraphicalViewer().setContextMenu(null);
-                
+                // GEF 3.25's setContextMenu(null) re-attaches a rebuilt popup menu to the live
+                // control and NPEs on the nulled manager field (AbstractEditPartViewer.java:668);
+                // only clear the field through the API when the viewer has no control to hang it on.
+                Control control = getGraphicalViewer().getControl();
+                if (control == null || control.isDisposed()) {
+                    getGraphicalViewer().setContextMenu(null);
+                }
             }
             if (getGraphicalViewer().getEditDomain() instanceof UrnEditDomain) {
                 UrnEditDomain domain = (UrnEditDomain) getGraphicalViewer().getEditDomain();

@@ -75,6 +75,36 @@ public final class DependencyMultiplicity {
                 && lower.intValue() > upper.intValue();
     }
 
+    /**
+     * Parses a multiplicity into its numerical bounds.
+     * 
+     * @return an array {@code {lower, upper}} where each bound is {@code -1} when unbounded
+     *         ({@code *}), or {@code null} when {@code value} is null, empty or not a valid
+     *         multiplicity.
+     */
+    public static int[] parseBounds(String value) {
+        if (value == null)
+            return null;
+        String s = normalize(value);
+        if (s.length() == 0)
+            return null;
+
+        int separator = s.indexOf(".."); //$NON-NLS-1$
+        if (separator <= 0 || separator + 2 >= s.length())
+            return null;
+        if (s.indexOf("..", separator + 2) >= 0) //$NON-NLS-1$
+            return null;
+
+        Integer lower = parseBound(s.substring(0, separator));
+        Integer upper = parseBound(s.substring(separator + 2));
+        if (lower == null || upper == null)
+            return null;
+        if (lower != UNBOUNDED && upper != UNBOUNDED && lower.intValue() > upper.intValue())
+            return null;
+
+        return new int[] { lower.intValue(), upper.intValue() };
+    }
+
     /** Sentinel for an unbounded ({@code *}) bound, never a valid non-negative integer. */
     private static final Integer UNBOUNDED = Integer.valueOf(-1);
 

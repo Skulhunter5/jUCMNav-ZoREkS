@@ -176,7 +176,7 @@ public interface GrlFactory extends EFactory {
 	 * @return a new object of class '<em>Grouped Dependency Link</em>'.
 	 * @generated
 	 */
-    GroupedDependencyLink createGroupedDependencyLink();
+    GroupedDependencyRef createGroupedDependencyRef();
 
     /**
 	 * Returns a new object of class '<em>Link Ref Bendpoint</em>'.
