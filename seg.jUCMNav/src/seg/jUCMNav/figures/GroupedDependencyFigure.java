@@ -3,6 +3,7 @@ package seg.jUCMNav.figures;
 import org.eclipse.draw2d.AbstractConnectionAnchor;
 import org.eclipse.draw2d.ConnectionAnchor;
 import org.eclipse.draw2d.Graphics;
+import org.eclipse.draw2d.Label;
 import org.eclipse.draw2d.Shape;
 import org.eclipse.draw2d.geometry.Dimension;
 import org.eclipse.draw2d.geometry.Point;
@@ -28,6 +29,10 @@ public class GroupedDependencyFigure extends Shape {
     // the D glyph is drawn at most this tall; widening the box does not grow it
     protected final static int MAX_D_RADIUS = 8;
 
+    // minimum gap between the box edge and the multiplicity label on the perpendicular sides
+    // (box pointing up or down); the labels above/below a left/right pointing box stay abutted.
+    private final static int LABEL_GAP = 2;
+
     // the side toward which the D points
     public static final int SIDE_RIGHT = 0;
     public static final int SIDE_LEFT = 1;
@@ -51,8 +56,36 @@ public class GroupedDependencyFigure extends Shape {
         }
     }
 
+    /**
+     * @return the side ({@link #SIDE_RIGHT}, {@link #SIDE_LEFT}, {@link #SIDE_TOP} or
+     *         {@link #SIDE_BOTTOM}) the multiplicity label orbits to for a box pointing toward
+     *         {@code targetSide}: the clockwise-perpendicular side, one of the two sides the fan
+     *         connections never attach to.
+     */
+    public static int labelSideForTargetSide(int targetSide) {
+        switch (targetSide) {
+        case SIDE_RIGHT:
+            return SIDE_TOP;
+        case SIDE_TOP:
+            return SIDE_RIGHT;
+        case SIDE_LEFT:
+            return SIDE_BOTTOM;
+        case SIDE_BOTTOM:
+        default:
+            return SIDE_LEFT;
+        }
+    }
+
     private int targetSide = SIDE_RIGHT;
     private boolean impossible;
+
+    // the size of the visual box; grows/shrinks with orientation, but is deliberately not forced
+    // to the orientation aspect until the box actually flips (see setTargetSide): a placement whose
+    // side never changes keeps the size it started with.
+    private Dimension boxSize = new Dimension(DEFAULT_WIDTH, DEFAULT_HEIGHT);
+
+    private final Label multiplicityLabel = new Label();
+    private String labelText = ""; //$NON-NLS-1$
 
     private ConnectionAnchor sideAnchor;
     private ConnectionAnchor sourceAnchor;
@@ -78,6 +111,13 @@ public class GroupedDependencyFigure extends Shape {
 
         setPreferredSize(GroupedDependencyFigure.getDefaultDimension());
         setSize(GroupedDependencyFigure.getDefaultDimension());
+
+        // the target multiplicity readout, hidden until a multiplicity is set. draw2d clips every
+        // child to the figure's own bounds, so the label lives inside an enlarged strip on the
+        // label side and the painted box is inset; see getVisualBox()/layoutLabel().
+        multiplicityLabel.setForegroundColor(ColorManager.LINKREFLABEL);
+        add(multiplicityLabel);
+        multiplicityLabel.setVisible(false);
 
         sideAnchor = new GroupedDependencySideAnchor(this);
         sourceAnchor = new GroupedDependencyFixedAnchor(this, true);
@@ -128,12 +168,11 @@ public class GroupedDependencyFigure extends Shape {
 
         // Let the box "turn" with the D: a vertical orientation reads as a tall box, a horizontal
         // one as a wide box. Swapping the aspect on the flip makes the whole symbol look rotated
-        // instead of a portrait rectangle with a sideways D inside.
-        Dimension size = getOrientationSize(targetSide);
-        if (!size.equals(getSize())) {
-            setSize(size);
-            setPreferredSize(size.getCopy());
-        }
+        // instead of a portrait rectangle with a sideways D inside. The size is built by
+        // recomputeSize() from this new box size plus the label strip, if any.
+        boxSize = getOrientationSize(targetSide).getCopy();
+        recomputeSize();
+        layoutLabel();
         repaint();
 
         // GEF caches the anchors of the box's fan connections and only re-queries them when the
@@ -141,6 +180,146 @@ public class GroupedDependencyFigure extends Shape {
         // the box itself is dragged. Fire the notification so every attached connection re-routes
         // against the new target side immediately.
         fireAnchorsMoved();
+    }
+
+    /**
+     * Sets the target-multiplicity text shown next to the box (rendered e.g. as {@code [1..*]}).
+     * An empty/null text hides the label and returns the figure to its plain box size; any other
+     * text shows the label on the free side and enlarges the figure by its strip.
+     */
+    public void setLabelText(String text) {
+        String t = text == null ? "" : text; //$NON-NLS-1$
+        if (t.equals(labelText))
+            return;
+        labelText = t;
+        multiplicityLabel.setText(labelText);
+        multiplicityLabel.setVisible(labelText.length() > 0);
+        recomputeSize();
+        layoutLabel();
+    }
+
+    /**
+     * @return the rectangle actually painted (the box, its D/X glyph and the fan attachment
+     *         points). When the multiplicity label is hidden this equals the figure bounds; when it
+     *         is visible the figure bounds are enlarged by the label strip on the label side and the
+     *         visual box is inset by that strip, so the box itself keeps its exact pre-label
+     *         position and size.
+     */
+    public Rectangle getVisualBox() {
+        Rectangle r = getBounds().getCopy();
+        if (!multiplicityLabel.isVisible())
+            return r;
+        Dimension labelSize = multiplicityLabel.getPreferredSize();
+        switch (labelSideForTargetSide(targetSide)) {
+        case SIDE_LEFT:
+            r.x += labelSize.width + LABEL_GAP;
+            r.width -= labelSize.width + LABEL_GAP;
+            break;
+        case SIDE_RIGHT:
+            r.width -= labelSize.width + LABEL_GAP;
+            break;
+        case SIDE_TOP:
+            r.y += labelSize.height;
+            r.height -= labelSize.height;
+            break;
+        case SIDE_BOTTOM:
+        default:
+            r.height -= labelSize.height;
+            break;
+        }
+        return r;
+    }
+
+    /**
+     * Recomputes the figure size from the current visual box size plus, when the label is visible,
+     * the label's preferred width (left/right strip) or height (top/bottom strip) on the label side.
+     */
+    private void recomputeSize() {
+        Dimension size = boxSize.getCopy();
+        if (multiplicityLabel.isVisible()) {
+            Dimension labelSize = multiplicityLabel.getPreferredSize();
+            int labelSide = labelSideForTargetSide(targetSide);
+            if (labelSide == SIDE_LEFT || labelSide == SIDE_RIGHT)
+                size.width += labelSize.width + LABEL_GAP;
+            else
+                size.height += labelSize.height;
+        }
+        if (!size.equals(getSize())) {
+            setSize(size);
+            setPreferredSize(size.getCopy());
+        }
+    }
+
+    /**
+     * Places the label abutted to the visual box edge on the label side (gap 0 above/below a
+     * left/right pointing box, {@link #LABEL_GAP} on the perpendicular sides of an up/down pointing
+     * box), centered along that edge. The text itself always stays horizontal; only the side it
+     * orbits to changes with the box orientation.
+     */
+    public void layoutLabel() {
+        if (!multiplicityLabel.isVisible())
+            return;
+        Rectangle box = getVisualBox();
+        Dimension labelSize = multiplicityLabel.getPreferredSize();
+        Rectangle label = new Rectangle(0, 0, labelSize.width, labelSize.height);
+        switch (labelSideForTargetSide(targetSide)) {
+        case SIDE_LEFT:
+            label.x = box.x - labelSize.width - LABEL_GAP;
+            label.y = box.y + (box.height - labelSize.height) / 2;
+            break;
+        case SIDE_RIGHT:
+            label.x = box.right() + LABEL_GAP;
+            label.y = box.y + (box.height - labelSize.height) / 2;
+            break;
+        case SIDE_TOP:
+            label.y = box.y - labelSize.height;
+            label.x = box.x + (box.width - labelSize.width) / 2;
+            break;
+        case SIDE_BOTTOM:
+        default:
+            label.y = box.bottom();
+            label.x = box.x + (box.width - labelSize.width) / 2;
+            break;
+        }
+        multiplicityLabel.setLocation(label.getLocation());
+        multiplicityLabel.setSize(label.getSize());
+    }
+
+    /**
+     * @return the multiplicity label's bounds translated to absolute diagram coordinates, or
+     *         {@code null} when the label is hidden (for double-click hit testing).
+     */
+    public Rectangle getLabelBounds() {
+        if (!multiplicityLabel.isVisible())
+            return null;
+        Rectangle r = multiplicityLabel.getBounds().getCopy();
+        translateToAbsolute(r);
+        return r;
+    }
+
+    /**
+     * The figure is only interactive where it paints: the visual box and (when visible) the
+     * multiplicity label itself. The rest of the enlarged strip the label runs in is empty
+     * background, so hovering, selecting or dragging there must fall through to the diagram
+     * below. (For the left/right pointing boxes whose label sits on the top/bottom strip this
+     * also excludes the empty ends of that strip; only the text rect and the box are hot.)
+     * 
+     * The mouse coordinates arrive in this figure's parent space, the same space
+     * {@link #getVisualBox()} is expressed in; the label's own bounds are relative to this
+     * figure, so they are shifted by the figure's location before the containment test. The
+     * label keeps participating in hit-testing so that double-clicking it still reaches this
+     * edit part.
+     */
+    @Override
+    public boolean containsPoint(int x, int y) {
+        if (getVisualBox().contains(x, y))
+            return true;
+        if (multiplicityLabel.isVisible()) {
+            Rectangle label = multiplicityLabel.getBounds().getCopy();
+            label.translate(getBounds().x, getBounds().y);
+            return label.contains(x, y);
+        }
+        return false;
     }
 
     /**
@@ -184,7 +363,7 @@ public class GroupedDependencyFigure extends Shape {
      * @see org.eclipse.draw2d.Shape#outlineShape(org.eclipse.draw2d.Graphics)
      */
     protected void outlineShape(Graphics graphics) {
-        Rectangle r = getBounds().getCopy();
+        Rectangle r = getVisualBox();
         r.x += getLineWidth() / 2;
         r.y += getLineWidth() / 2;
         r.width -= getLineWidth();
@@ -203,7 +382,7 @@ public class GroupedDependencyFigure extends Shape {
      * @see org.eclipse.draw2d.Shape#fillShape(org.eclipse.draw2d.Graphics)
      */
     protected void fillShape(Graphics graphics) {
-        Rectangle r = getBounds().getCopy();
+        Rectangle r = getVisualBox();
         r.x += getLineWidth() / 2;
         r.y += getLineWidth() / 2;
         r.width -= getLineWidth();
@@ -218,7 +397,7 @@ public class GroupedDependencyFigure extends Shape {
      * anywhere.
      */
     private void drawX(Graphics graphics) {
-        Rectangle r = getBounds().getCopy();
+        Rectangle r = getVisualBox();
         int cx = r.x + r.width / 2;
         int cy = r.y + r.height / 2;
         int radius = Math.min(MAX_D_RADIUS, Math.min(r.width, r.height) / 2 - 4);
@@ -236,7 +415,7 @@ public class GroupedDependencyFigure extends Shape {
      * the way a printed "D" starts flat off the stem and then curves in hard at the belly.
      */
     private void drawD(Graphics graphics) {
-        Rectangle r = getBounds().getCopy();
+        Rectangle r = getVisualBox();
         int cx = r.x + r.width / 2;
         int cy = r.y + r.height / 2;
         int radius = Math.min(MAX_D_RADIUS, Math.min(r.width, r.height) / 2 - 4);
@@ -312,7 +491,7 @@ public class GroupedDependencyFigure extends Shape {
          * @see org.eclipse.draw2d.ConnectionAnchor#getLocation(org.eclipse.draw2d.geometry.Point)
          */
         public Point getLocation(Point reference) {
-            Rectangle r = getOwner().getBounds();
+            Rectangle r = ((GroupedDependencyFigure) getOwner()).getVisualBox();
             Point center = r.getCenter();
             int dx = reference.x - center.x;
             int dy = reference.y - center.y;
@@ -357,7 +536,7 @@ public class GroupedDependencyFigure extends Shape {
          * @see org.eclipse.draw2d.ConnectionAnchor#getLocation(org.eclipse.draw2d.geometry.Point)
          */
         public Point getLocation(Point reference) {
-            Rectangle r = getOwner().getBounds();
+            Rectangle r = ((GroupedDependencyFigure) getOwner()).getVisualBox();
             int side = ((GroupedDependencyFigure) getOwner()).getTargetSide();
             if (!bulge)
                 side = oppositeSide(side);

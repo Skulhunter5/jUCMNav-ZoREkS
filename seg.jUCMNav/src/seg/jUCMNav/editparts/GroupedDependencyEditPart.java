@@ -18,6 +18,7 @@ import org.eclipse.gef.EditPolicy;
 import org.eclipse.gef.NodeEditPart;
 import org.eclipse.gef.Request;
 import org.eclipse.gef.RequestConstants;
+import org.eclipse.gef.requests.SelectionRequest;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.PlatformUI;
@@ -146,16 +147,22 @@ public class GroupedDependencyEditPart extends GrlNodeEditPart implements NodeEd
     }
 
     /**
-     * Double-click on the box opens the multiplicity dialog for its target end; the resulting value
-     * is applied to the grouped dependency itself via the command stack. F2 (direct edit) is a
-     * no-op: delegating it to {@link GrlNodeEditPart} would cast this non-{@code GrlNodeFigure}
-     * figure in its direct-edit path. All other requests still go to super.
+     * Double-click on the multiplicity label next to the box opens the dialog for its target end;
+     * the resulting value is applied to the grouped dependency itself via the command stack. A
+     * double-click on the box itself does nothing. F2 (direct edit) is a no-op: delegating it to
+     * {@link GrlNodeEditPart} would cast this non-{@code GrlNodeFigure} figure in its direct-edit
+     * path. All other requests still go to super.
      * 
      * @see seg.jUCMNav.editparts.ModelElementEditPart#performRequest(org.eclipse.gef.Request)
      */
     public void performRequest(Request req) {
         if (req.getType() == RequestConstants.REQ_OPEN) {
-            openMultiplicityDialog();
+            if (req instanceof SelectionRequest) {
+                Point location = ((SelectionRequest) req).getLocation();
+                Rectangle labelBounds = getNodeFigure().getLabelBounds();
+                if (labelBounds != null && location != null && labelBounds.contains(location))
+                    openMultiplicityDialog();
+            }
             return;
         }
         if (req.getType() == RequestConstants.REQ_DIRECT_EDIT)
@@ -346,14 +353,15 @@ public class GroupedDependencyEditPart extends GrlNodeEditPart implements NodeEd
      */
     protected void refreshVisuals() {
         GroupedDependencyRef node = getNode();
+        GroupedDependencyFigure figure = getNodeFigure();
         Point location = new Point(node.getX(), node.getY());
-        Dimension size = getNodeFigure().getSize().getCopy();
-        Rectangle bounds = new Rectangle(location, size);
-        getFigure().setBounds(bounds);
-        getFigure().setLocation(location);
+
+        // The multiplicity readout first: it (re)sizes the figure by its label strip when a text is
+        // present, and returns it to the plain box size when cleared.
+        figure.setLabelText(DependencyMultiplicity.toDisplay(getDef().getDestMultiplicity()));
 
         boolean impossible = DependencyMultiplicity.isUnsatisfiable(getDef().getDestMultiplicity());
-        getNodeFigure().setImpossible(impossible);
+        figure.setImpossible(impossible);
         if (impossible != wasImpossible) {
             // the fan connections decide their own visibility from the box; nudge them so a switch
             // between impossible (X, hidden target fans) and satisfiable (D, visible fans) is
@@ -362,9 +370,16 @@ public class GroupedDependencyEditPart extends GrlNodeEditPart implements NodeEd
             refreshFanLinkVisibility();
         }
 
+        // May flip the side, which moves the label strip to the new free side.
         updateTargetOrientation();
 
-        getFigure().validate();
+        Dimension size = figure.getSize().getCopy();
+        Rectangle bounds = new Rectangle(location, size);
+        figure.setBounds(bounds);
+        figure.setLocation(location);
+
+        figure.layoutLabel();
+        figure.validate();
     }
 
     /**

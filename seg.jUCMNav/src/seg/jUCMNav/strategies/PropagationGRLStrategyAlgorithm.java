@@ -8,8 +8,12 @@ import grl.GRLLinkableElement;
 import grl.GroupedDependency;
 import grl.IntentionalElement;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Vector;
 
 import seg.jUCMNav.extensionpoints.IGRLStrategyAlgorithm;
@@ -132,28 +136,160 @@ public abstract class PropagationGRLStrategyAlgorithm {
         int lower = bounds[0];
         int upper = bounds[1];
 
-        // the box's linksDest holds the target-side fans; each target instance is the fan's src.
-        // the multiplicity counts how many target instances are satisfied, mirroring how an ordinary
-        // dependency restricts its drawing-start (source) based on its drawing-end (target).
-        int satisfied = 0;
+        int scaleMin = -100 * (StrategyEvaluationRangeHelper.getCurrentRange(strategy.getGrlspec().getUrnspec()) ? 0 : 1);
+        if (scaleMin != -100) {
+        	System.err.println("[Grouped Dependency Evaluation] Unsupposed evaluation scale");
+        	return -102;
+        }
+        
+        int targetCount = groupedDependency.getLinksDest().size();
+        List<Integer> targetEvaluations = new ArrayList<>(targetCount);
+        
+        final int FULLY_SATISFIED = 100;
+        final int WEAKLY_SATISFIED = 50;
+        final int WEAKLY_DENIED = -50;
+        final int FULLY_DENIED = -100;
+        
+        int fullySatisfied = 0;
+        int weaklySatisfied = 0;
+        int weaklyDenied = 0;
+        int fullyDenied = 0;
+        int unknownCount = 0;
+        int specialCount = 0;
         for (Iterator iter = groupedDependency.getLinksDest().iterator(); iter.hasNext();) {
             ElementLink link = (ElementLink) iter.next();
             Evaluation targetEval = (Evaluation) evaluations.get(link.getSrc());
-            if (targetEval != null && targetEval.getEvaluation() > 0)
-                ++satisfied;
+            if (targetEval != null) {
+            	int evaluation = targetEval.getEvaluation();
+            	if (evaluation < -50) {
+            		fullyDenied++;
+            	} else if (evaluation < 0) {
+            		weaklyDenied++;
+            	} else if (evaluation > 50) {
+            		fullySatisfied++;
+            	} else if (evaluation > 0) {
+            		weaklySatisfied++;
+            	} else if (evaluation == 0){
+            		unknownCount++;
+            	} else {
+            		specialCount++;
+            	}
+                targetEvaluations.add(evaluation);
+            } else {
+            	targetEvaluations.add(0);
+            }
+        }
+        int satisfiedCount = fullySatisfied + weaklySatisfied;
+        int deniedCount = fullyDenied + weaklyDenied;
+        
+        if (targetCount - unknownCount == 0) {
+        	return 0;
         }
 
-        int scaleMin = -100 * (StrategyEvaluationRangeHelper.getCurrentRange(strategy.getGrlspec().getUrnspec()) ? 0 : 1);
-
-        // placeholder semantics: the multiplicity is either met or not.
-        // fewer satisfied targets than the required minimum, or more than the upper bound, fully
-        // denies the group: the box evaluates to scaleMin and its value restricts the source-side
-        // copies (each source copy is the dest of a box fan and is clipped to the box's value).
-        if (lower > 0 && satisfied < lower)
-            return scaleMin;
-        if (upper >= 0 && satisfied > upper)
-            return scaleMin;
-        return IGRLStrategyAlgorithm.SATISFICED;
+        //System.out.println("targetEvaluations: " + targetEvaluations.toString());
+        
+        if (specialCount > 0) {
+        	System.err.println("[Grouped Dependency Evaluation] Conflict or Unknown qualitative label not supported for grouped dependency evaluation");
+        	return -102;
+        }
+        
+        // CASE 1
+        if (lower == 1 && upper == targetCount) {
+        	int limit = Collections.max(targetEvaluations);
+        	return limit;
+        }
+        // CASE 2
+        if (lower == targetCount && upper == targetCount) {
+        	int limit = Collections.min(targetEvaluations);
+        	return limit;
+        }
+        // CASE 3
+        if (lower >= 1 && 1 <= upper && upper <= targetCount) {
+        	//targetCount -= unknownCount;
+        	if (lower <= fullySatisfied && fullySatisfied <= upper
+        			&& fullyDenied == (targetCount - fullySatisfied)) {
+        		return FULLY_SATISFIED;
+        	}
+        	if (lower <= fullySatisfied && fullySatisfied <= upper
+        			&& weaklySatisfied == 0
+        			&& weaklyDenied > 0) {
+        		return WEAKLY_SATISFIED;
+        	}
+        	if (lower <= fullySatisfied && fullySatisfied <= upper
+        			&& weaklySatisfied == 0
+        			&& weaklySatisfied > weaklyDenied) {
+        		return WEAKLY_SATISFIED;
+        	}
+        	if (lower <= fullySatisfied && fullySatisfied <= upper
+        			&& weaklySatisfied == 0
+        			&& weaklySatisfied <= weaklyDenied) {
+        		return WEAKLY_DENIED;
+        	}
+        	if (lower <= satisfiedCount && satisfiedCount <= upper
+        			&& fullySatisfied > weaklySatisfied
+        			&& fullyDenied > weaklyDenied) {
+        		return WEAKLY_SATISFIED;
+        	}
+        	if (lower <= satisfiedCount && satisfiedCount <= upper
+        			&& fullySatisfied > weaklySatisfied
+        			&& fullyDenied <= weaklyDenied) {
+        		return WEAKLY_DENIED;
+        	}
+        	if (lower <= satisfiedCount && satisfiedCount <= upper
+        			&& fullySatisfied <= weaklySatisfied
+        			&& fullyDenied > weaklyDenied
+        			&& fullyDenied > weaklySatisfied) {
+        		return WEAKLY_SATISFIED;
+        	}
+        	if (lower <= satisfiedCount && satisfiedCount <= upper
+        			&& fullySatisfied <= weaklySatisfied
+        			&& fullyDenied <= weaklyDenied) {
+        		return WEAKLY_DENIED;
+        	}
+        	if (fullySatisfied == 0
+        			&& lower <= weaklySatisfied && weaklySatisfied <= upper
+        			&& fullyDenied == 0) { // original: 
+        		return WEAKLY_SATISFIED;
+        	}
+        	if (fullySatisfied == 0
+        			&& lower <= weaklySatisfied && weaklySatisfied <= upper
+        			&& fullyDenied > 0) { // original: weaklyDenied < (targetCount - weaklySatisfied)
+        		return WEAKLY_DENIED;
+        	}
+        	return FULLY_DENIED;
+        }
+        // CASE 4
+        if (lower == 0 && upper == 0) {
+        	if (deniedCount == targetCount) {
+        		return FULLY_SATISFIED;
+        	} else {
+        		return FULLY_DENIED;
+        	}
+        }
+        
+        System.err.println("[Grouped Dependency Evaluation] Missing case for " + targetEvaluations.toString() + " and " + lower + ".." + upper);
+        return -102;
+        
+//        // the box's linksDest holds the target-side fans; each target instance is the fan's src.
+//        // the multiplicity counts how many target instances are satisfied, mirroring how an ordinary
+//        // dependency restricts its drawing-start (source) based on its drawing-end (target).
+//        int satisfied = 0;
+//        for (Iterator iter = groupedDependency.getLinksDest().iterator(); iter.hasNext();) {
+//            ElementLink link = (ElementLink) iter.next();
+//            Evaluation targetEval = (Evaluation) evaluations.get(link.getSrc());
+//            if (targetEval != null && targetEval.getEvaluation() > 0)
+//                ++satisfied;
+//        }
+//
+//        // placeholder semantics: the multiplicity is either met or not.
+//        // fewer satisfied targets than the required minimum, or more than the upper bound, fully
+//        // denies the group: the box evaluates to scaleMin and its value restricts the source-side
+//        // copies (each source copy is the dest of a box fan and is clipped to the box's value).
+//        if (lower > 0 && satisfied < lower)
+//            return scaleMin;
+//        if (upper >= 0 && satisfied > upper)
+//            return scaleMin;
+//        return IGRLStrategyAlgorithm.SATISFICED;
     }
 
 }
