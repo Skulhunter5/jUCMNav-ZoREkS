@@ -119,6 +119,7 @@ import seg.jUCMNav.actions.scenarios.EditCodeAction;
 import seg.jUCMNav.actions.scenarios.EditContributionRangeAction;
 import seg.jUCMNav.actions.scenarios.EditEvaluationRangeAction;
 import seg.jUCMNav.actions.scenarios.EditSecondaryCodeAction;
+import seg.jUCMNav.model.commands.transformations.ChangeGroupedDependencyOrientationOverrideCommand;
 import seg.jUCMNav.views.preferences.DisplayPreferences;
 
 /**
@@ -432,8 +433,16 @@ public class UrnContextMenuProvider extends ContextMenuProvider {
                 orientationActions,
                 Messages.getString("UrnContextMenuProvider.orientationOverride"), Messages.getString("UrnContextMenuProvider.orientationOverride"),
                 JUCMNavPlugin.getImageDescriptor("icons/Aggregate1.gif"), true); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-        if (orientationSubmenu.getActiveOperationCount() > 0)
+        if (orientationSubmenu.getActiveOperationCount() > 0) {
+            String current = ((SetGroupedDependencyOrientationOverrideAction) orientationActions[0]).currentOverrideValue();
+            if (current != null) {
+                String mode = ChangeGroupedDependencyOrientationOverrideCommand.NONE.equals(current)
+                        ? Messages.getString("UrnContextMenuProvider.orientationOverrideNone")
+                        : Messages.getString("SetGroupedDependencyOrientationOverrideAction." + current);
+                orientationSubmenu.setText(Messages.getString("UrnContextMenuProvider.orientationOverride") + " (" + mode + ")"); //$NON-NLS-1$ //$NON-NLS-2$
+            }
             manager.appendToGroup(GEFActionConstants.GROUP_REST, orientationSubmenu);
+        }
 
         action = getActionRegistry().getAction(EditEvaluationRangeAction.EDITEVALUATIONRANGEACTION);
         if (action.isEnabled())

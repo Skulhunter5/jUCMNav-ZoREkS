@@ -11,6 +11,7 @@ import seg.jUCMNav.Messages;
 import seg.jUCMNav.editparts.GroupedDependencyEditPart;
 import seg.jUCMNav.editparts.LinkRefEditPart;
 import seg.jUCMNav.model.commands.transformations.ChangeGroupedDependencyOrientationOverrideCommand;
+import seg.jUCMNav.model.util.MetadataHelper;
 import seg.jUCMNav.strategies.util.ReusedElementUtil;
 
 /**
@@ -97,5 +98,17 @@ public class SetGroupedDependencyOrientationOverrideAction extends URNSelectionA
 
     public void run() {
         execute(new ChangeGroupedDependencyOrientationOverrideCommand(box, value));
+    }
+
+    /**
+     * @return the override currently stored on the box under the current selection, normalized so that
+     *         an absent override yields {@link ChangeGroupedDependencyOrientationOverrideCommand#NONE},
+     *         or {@code null} if the selection does not resolve to a single box.
+     */
+    public String currentOverrideValue() {
+        if (!calculateEnabled())
+            return null;
+        String stored = MetadataHelper.getMetaData(box, ChangeGroupedDependencyOrientationOverrideCommand.ORIENTATION_OVERRIDE_KEY);
+        return stored == null ? ChangeGroupedDependencyOrientationOverrideCommand.NONE : stored;
     }
 }
