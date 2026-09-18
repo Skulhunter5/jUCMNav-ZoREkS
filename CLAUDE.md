@@ -202,15 +202,18 @@ inherited from `JUCMNAV/projetseg-update` (see
 
 In a fresh session, work the same way the modernization did:
 - Small, single-purpose commits. One root cause per commit.
+- **Never push.** The user always runs `git push` themselves; the agent
+  stops after committing. Recommend a target branch (see below) in the
+  wrap-up if a push is warranted, but never perform it.
 - Run `mvn -B clean verify` before any push to `master` — it's a hard
   gate, not advisory. Zero failures must hold; the test count grows, so
   compare against the previous run rather than a number written here.
 - If the user says "test suite is irrelevant for this change" you can
   build with `mvn -B clean package -DskipTests` to iterate faster; re-run
-  the full gate before pushing.
-- Push to `modernization` first; `master` is a fast-follow only when the
-  user explicitly asks for it. CI on `master` triggers the Pages deploy,
-  so be deliberate.
+  the full gate before the user's push.
+- When a push is warranted, recommend `modernization` first; `master` is a
+  fast-follow only when the user explicitly asks for it. CI on `master`
+  triggers the Pages deploy, so be deliberate.
 
 ## Do not
 
