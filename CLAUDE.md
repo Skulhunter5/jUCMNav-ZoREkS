@@ -45,7 +45,8 @@ not a TODO list.
    `.ecore`/`.genmodel` and regenerate. Generated files are recognizable by the
    `@generated` tag. Hand-written extensions use `@generated NOT` — preserve those.
 3. **Small, compilable, single-purpose commits.** One error cluster per commit so
-   regressions can be bisected. Don't batch unrelated fixes.
+   regressions can be bisected. Don't batch unrelated fixes. Commits are only ever
+   made at the user's explicit request.
 4. **Preserve behavior.** This is a migration, not a redesign. If a fix changes
    what the tool does (e.g. a GRL evaluation result), stop and flag it for human
    review rather than guessing.
@@ -201,10 +202,15 @@ inherited from `JUCMNAV/projetseg-update` (see
 `docs/legacy-issue-triage.md`).
 
 In a fresh session, work the same way the modernization did:
-- Small, single-purpose commits. One root cause per commit.
-- **Never push.** The user always runs `git push` themselves; the agent
-  stops after committing. If a push is warranted, say so in the wrap-up,
-  but never perform it.
+- **Never commit unless explicitly asked.** The user decides when work is
+  committed; finished changes are left in the working tree (staged or not) for
+  the user to review. Do not create commits, amend, or otherwise touch git
+  history on your own.
+- **Never push.** The user always runs `git push` themselves. If a push is
+  warranted, say so in the wrap-up, but never perform it.
+- Small, single-purpose commits, one root cause per commit — this describes
+  the granularity of the work and of the commits the user will ask for, not a
+  license to commit on your own.
 - Run `mvn -B clean verify` before any push to `master` — it's a hard
   gate, not advisory. Zero failures must hold; the test count grows, so
   compare against the previous run rather than a number written here.
