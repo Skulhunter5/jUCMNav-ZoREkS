@@ -389,7 +389,7 @@ public class MultiPageFileManager {
 	}
 
 	public void resetFile(IFile file, URNspec spec) {
-		modelManager.createURNspec(file.getFullPath().toFile(), spec);
+		modelManager.createURNspec(file.getLocation().toFile(), spec);
 	}
 
 }
