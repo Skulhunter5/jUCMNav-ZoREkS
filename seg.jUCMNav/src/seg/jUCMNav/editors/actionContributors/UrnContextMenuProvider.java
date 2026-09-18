@@ -518,9 +518,14 @@ public class UrnContextMenuProvider extends ContextMenuProvider {
         if (action.isEnabled())
             manager.appendToGroup(GEFActionConstants.GROUP_REST, action);
 
-        action = getActionRegistry().getAction(GoToTypeModelAction.GOTOTYPEMODEL);
-        if (action.isEnabled())
-            manager.appendToGroup(GEFActionConstants.GROUP_REST, action);
+        GoToTypeModelAction goToModel = (GoToTypeModelAction) getActionRegistry()
+                .getAction(GoToTypeModelAction.GOTOTYPEMODEL);
+        if (goToModel.isApplicable()) {
+            goToModel.setText(goToModel.isEnabled()
+                    ? Messages.getString("ActionRegistryManager.goToTypeModel") //$NON-NLS-1$
+                    : Messages.getString("GoToTypeModelAction.deleted")); //$NON-NLS-1$
+            manager.appendToGroup(GEFActionConstants.GROUP_REST, goToModel);
+        }
         
         action = getActionRegistry().getAction(AddFMDAction.ADDFMD);
         if (action.isEnabled())

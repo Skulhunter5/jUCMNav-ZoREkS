@@ -34,8 +34,18 @@ public class GoToTypeModelAction extends URNSelectionAction {
     }
 
     /**
-     * Only shown when a GRL graph that is an instance model is selected (diagram background,
-     * like the generate action), and its type model can be resolved.
+     * Whether the current selection is an instance model (diagram background, like the generate
+     * action), regardless of whether its type model can be resolved. Used to decide whether the
+     * action is worth showing in the context menu at all.
+     */
+    public boolean isApplicable() {
+        SelectionHelper sel = new SelectionHelper(getSelectedObjects());
+        return sel.getUrnspec() != null && sel.getSelectionType() == SelectionHelper.GRLGRAPH
+                && GenerateInstanceModelCommand.isInstanceModel(sel.getGrlgraph());
+    }
+
+    /**
+     * Enabled only when an instance model is selected and its type model can be resolved.
      */
     protected boolean calculateEnabled() {
         SelectionHelper sel = new SelectionHelper(getSelectedObjects());
