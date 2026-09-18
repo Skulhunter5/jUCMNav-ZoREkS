@@ -135,13 +135,15 @@ public class QualitativeGRLStrategyAlgorithm extends PropagationGRLStrategyAlgor
                 decomSums[qval]++;
 
             } else if (link instanceof Dependency) {
-                if (depMinLabel == null)
-                    depMinLabel = ((Evaluation) evaluations.get(element)).getQualitativeEvaluation();
                 QualitativeLabel depValue = ((Evaluation) evaluations.get(link.getSrc())).getQualitativeEvaluation();
+                // Conflict results are substituted with Undecided, as conflicts are not propagated through dependencies
+                if (depValue != null && depValue.getValue() == QualitativeLabel.CONFLICT)
+                    depValue = QualitativeLabel.UNKNOWN_LITERAL;
 
-                if (labelComp.compare(depValue, depMinLabel) > 0) {
+                // the depender is capped by the weakest (most restrictive) of the elements it depends on;
+                // never by its own previously stored value
+                if (depMinLabel == null || labelComp.compare(depValue, depMinLabel) > 0) {
                     depMinLabel = depValue;
-                    //foundSmallerDependency = true;
                 }
             } else if (link instanceof Contribution) {
                 Contribution contrib = (Contribution) link;
@@ -226,6 +228,10 @@ public class QualitativeGRLStrategyAlgorithm extends PropagationGRLStrategyAlgor
 
             if (labelComp.compare(depMinLabel, currLabel) > 0)
                 result = depMinLabel.getValue();
+
+            // Conflict results are substituted with Undecided, as conflicts are not propagated through dependencies
+            if (result == C)
+                result = U;
         }
 
         return (result != -1 ? contribMap[result] : 0);
