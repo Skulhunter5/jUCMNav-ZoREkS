@@ -73,7 +73,7 @@ public class UrnMetadata {
             if (name.toUpperCase().startsWith(STEREOTYPE_PREFIX)) {
                 // Could be added to extract the kind of stereotype, but takes too much real estate.
                 stereotypes = stereotypes + STEREOTYPE_OPEN + metadata.getValue() + STEREOTYPE_CLOSE; 
-            } else if (!MetadataHelper.isRuntimeMetadata(name))
+            } else if (isMetadataMeaningful(name) && !MetadataHelper.isRuntimeMetadata(name))
                 otherMetadataTypes = true;
         }
 
@@ -111,7 +111,7 @@ public class UrnMetadata {
 
             if (name.toUpperCase().startsWith(STEREOTYPE_PREFIX)) {
                 sb.append( STEREOTYPE_OPEN + metadata.getValue() + STEREOTYPE_CLOSE ); 
-            } else if (!MetadataHelper.isRuntimeMetadata(name)) {
+            } else if (isMetadataMeaningful(name) && !MetadataHelper.isRuntimeMetadata(name)) {
                 otherMetadataTypes = true;
             }
     	}
