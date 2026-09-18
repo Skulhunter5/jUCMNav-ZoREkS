@@ -72,7 +72,14 @@ background + text) occupies the extra room.
   enlarged strip the label runs in is empty background, so hovering/selecting/dragging there
   falls through to the diagram (and the empty ends of the top/bottom strips of an up/down
   pointing box are not interactive either). The label text stays a hit target so
-  double-clicking it still reaches the edit part.
+  double-clicking it still reaches the edit part. The mouse coordinates arrive in the figure's
+  parent space; because this figure defines no local coordinate system (`useLocalCoordinates()`
+  is false) the label's bounds already live in that same space, so no shift is applied.
+- `getHandleBounds()` — implements `org.eclipse.gef.handles.HandleBounds`, returning
+  `getVisualBox()`. GEF sizes the gray drag-ghost preview (`NonResizableEditPolicy`), the focus
+  rectangle, handle placement and snap-guide rectangles from this rectangle instead of the full
+  figure bounds, so they stay box-sized and never grow to include the label strip. The visual
+  box is in the same space as `getBounds()`, satisfying the `HandleBounds` contract.
 - `fillShape`, `outlineShape`, `drawD`, `drawX` and both anchor inner classes
   (`GroupedDependencySideAnchor`, `GroupedDependencyFixedAnchor`) switch from `getBounds()`
   to `getVisualBox()`, so the painted box, glyph and fan anchor points are unchanged.

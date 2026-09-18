@@ -9,6 +9,7 @@ import org.eclipse.draw2d.geometry.Dimension;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.PointList;
 import org.eclipse.draw2d.geometry.Rectangle;
+import org.eclipse.gef.handles.HandleBounds;
 
 import seg.jUCMNav.views.preferences.GeneralPreferencePage;
 
@@ -19,7 +20,7 @@ import seg.jUCMNav.views.preferences.GeneralPreferencePage;
  * @author skuly
  * 
  */
-public class GroupedDependencyFigure extends Shape {
+public class GroupedDependencyFigure extends Shape implements HandleBounds {
 
     // default sizes: a little wider than the original squish so the D has room to breathe, height back to 80% of the
     // original square
@@ -304,22 +305,31 @@ public class GroupedDependencyFigure extends Shape {
      * below. (For the left/right pointing boxes whose label sits on the top/bottom strip this
      * also excludes the empty ends of that strip; only the text rect and the box are hot.)
      * 
-     * The mouse coordinates arrive in this figure's parent space, the same space
-     * {@link #getVisualBox()} is expressed in; the label's own bounds are relative to this
-     * figure, so they are shifted by the figure's location before the containment test. The
-     * label keeps participating in hit-testing so that double-clicking it still reaches this
-     * edit part.
+     * The mouse coordinates arrive in this figure's parent space, and the label's bounds live in
+     * that same space: this figure defines no local coordinate system (useLocalCoordinates() is
+     * false), so no shift is applied to the label before the containment test. The label keeps
+     * participating in hit-testing so that double-clicking it still reaches this edit part.
      */
     @Override
     public boolean containsPoint(int x, int y) {
         if (getVisualBox().contains(x, y))
             return true;
-        if (multiplicityLabel.isVisible()) {
-            Rectangle label = multiplicityLabel.getBounds().getCopy();
-            label.translate(getBounds().x, getBounds().y);
-            return label.contains(x, y);
-        }
-        return false;
+        return multiplicityLabel.isVisible() && multiplicityLabel.getBounds().contains(x, y);
+    }
+
+    /**
+     * Interactions (handle placement, the gray drag-ghost preview, the focus rectangle, snap
+     * guide rectangles) are sized and located from this rectangle rather than the full figure
+     * bounds, so they do not grow to include the multiplicity-label strip. The visual box is
+     * expressed in the same space as {@code getBounds()}, which satisfies the HandleBounds
+     * contract; GEF then translates it to absolute coordinates exactly as it would translate
+     * {@code getBounds()}.
+     *
+     * @see org.eclipse.gef.handles.HandleBounds#getHandleBounds()
+     */
+    @Override
+    public Rectangle getHandleBounds() {
+        return getVisualBox();
     }
 
     /**
