@@ -182,21 +182,23 @@ public abstract class PropagationGRLStrategyAlgorithm {
         int satisfiedCount = fullySatisfied + weaklySatisfied;
         int deniedCount = fullyDenied + weaklyDenied;
         
+        // CASE 1
+        if (lower == 1 && upper == targetCount) {
+        	if (satisfiedCount == 0) {
+        		// no target is satisfied, so the at-least-one bound is unmet
+        		return FULLY_DENIED;
+        	}
+        	int limit = Collections.max(targetEvaluations);
+        	return limit;
+        }
+        
         if (targetCount - unknownCount == 0) {
         	return 0;
         }
-
-        //System.out.println("targetEvaluations: " + targetEvaluations.toString());
         
         if (specialCount > 0) {
         	System.err.println("[Grouped Dependency Evaluation] Conflict or Unknown qualitative label not supported for grouped dependency evaluation");
         	return -102;
-        }
-        
-        // CASE 1
-        if (lower == 1 && upper == targetCount) {
-        	int limit = Collections.max(targetEvaluations);
-        	return limit;
         }
         // CASE 2
         if (lower == targetCount && upper == targetCount) {
