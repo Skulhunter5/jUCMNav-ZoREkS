@@ -1430,9 +1430,21 @@
             </and>
          </triggerPoints>
       </navigatorContent>
-   </extension>
-   <extension
-         point="org.eclipse.ui.navigator.viewer">
+       <actionProvider
+             class="seg.jUCMNav.views.customCommonNavigator.actions.SafeEditActionProvider"
+             id="seg.jUCMNav.SafeEditActions"
+             overrides="org.eclipse.ui.navigator.resources.actions.EditActions">
+          <enablement>
+             <or>
+                <instanceof
+                      value="org.eclipse.core.resources.IResource">
+                </instanceof>
+             </or>
+          </enablement>
+       </actionProvider>
+    </extension>
+    <extension
+          point="org.eclipse.ui.navigator.viewer">
       <viewerContentBinding
             viewerId="seg.jUCMNav.CustomCommonNavigator">
          <includes>
@@ -1455,6 +1467,9 @@
          <includes>
             <actionExtension
                   pattern="org.eclipse.ui.navigator.resources.*">
+            </actionExtension>
+            <actionExtension
+                  pattern="seg.jUCMNav.SafeEditActions">
             </actionExtension>
          </includes>
       </viewerActionBinding>
